@@ -2,7 +2,7 @@
 
 import { ImagePlus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NoGroupState } from '@/components/NoGroupState';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
@@ -12,6 +12,7 @@ import { useAlbumsOf, useHasNoGroup, useMyGroups, useUploadPhotos } from '@/lib/
 import { UPLOAD_MAX_SELECT } from '@/lib/api/photos';
 import { useActiveGroupId } from '@/lib/store/session';
 import { cn } from '@/lib/utils/cn';
+import { makeThumbnail } from '@/lib/utils/image';
 
 const MAX_FILES = UPLOAD_MAX_SELECT;
 const RATIOS = [
@@ -38,12 +39,45 @@ export function UploadScreen() {
   const targetGroupIds = pickedGroupIds ?? (activeGroupId ? [activeGroupId] : []);
   const [albumByGroup, setAlbumByGroup] = useState<Record<string, string>>({});
 
-  const previews = useMemo(() => files.map((f) => ({ file: f, url: URL.createObjectURL(f) })), [files]);
-  useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
+  // 파일별 썸네일 URL 캐시 — 한 장을 빼도 나머지는 다시 디코딩하지 않는다 (이전엔 전체 재생성으로 수 초 멈춤)
+  const thumbCache = useRef(new Map<File, string>());
+  const [thumbs, setThumbs] = useState<Map<File, string>>(new Map());
+  useEffect(() => {
+    let cancelled = false;
+    const cache = thumbCache.current;
+    // 제거된 파일의 URL 만 해제
+    for (const [file, url] of cache) {
+      if (!files.includes(file)) {
+        URL.revokeObjectURL(url);
+        cache.delete(file);
+      }
+    }
+    // 새로 추가된 파일만 썸네일 생성 (순차 — 동시에 수십 장 디코딩하면 탭이 멈춘다)
+    (async () => {
+      for (const file of files) {
+        if (cancelled) return;
+        if (cache.has(file)) continue;
+        cache.set(file, await makeThumbnail(file));
+        if (!cancelled) setThumbs(new Map(cache));
+      }
+      if (!cancelled) setThumbs(new Map(cache));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [files]);
+  useEffect(() => {
+    const cache = thumbCache.current;
+    return () => cache.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+  const previews = files.map((file) => ({ file, url: thumbs.get(file) }));
 
   const addFiles = async (list: FileList | null) => {
     if (!list) return;
-    const picked = Array.from(list).filter((f) => f.type.startsWith('image/'));
+    // 같은 파일을 두 번 고르면 한 번만 (키 충돌·중복 업로드 방지)
+    const keyOf = (f: File) => `${f.name}-${f.size}-${f.lastModified}`;
+    const seen = new Set(files.map(keyOf));
+    const picked = Array.from(list).filter((f) => f.type.startsWith('image/') && !seen.has(keyOf(f)) && (seen.add(keyOf(f)), true));
     const next = [...files, ...picked].slice(0, MAX_FILES);
     if (files.length + picked.length > MAX_FILES) await dialog.alert('선택 한도', `한 번에 ${MAX_FILES}장까지 올릴 수 있어요. 나눠서 올려주세요.`);
     setFiles(next);
@@ -99,10 +133,12 @@ export function UploadScreen() {
       <SectionHeader title="사진" meta={`${files.length} / ${MAX_FILES}`} />
       <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
         {previews.map((p, i) => (
-          <div key={p.url} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: ratio }}>
+          <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: ratio }}>
             {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            {p.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            ) : null}
             <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
               <X className="h-3.5 w-3.5" strokeWidth={2} />
             </button>
