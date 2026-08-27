@@ -54,11 +54,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-divider px-4 py-3 md:hidden">
-          <GroupSwitcher compact />
-          <Link href="/feed" className="font-serif text-lg font-semibold tracking-[0.2em] text-ink" aria-label="홈으로">
+        <header className="flex items-center justify-between gap-3 border-b border-divider px-4 py-3 md:hidden">
+          <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.2em] text-ink" aria-label="홈으로">
             ONGI
           </Link>
+          <GroupSwitcher compact />
         </header>
         <main className="flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
       </div>
@@ -92,17 +92,28 @@ function GroupSwitcher({ compact = false }: { compact?: boolean }) {
   const activeGroupId = useSession((s) => s.activeGroupId);
   const active = groups.data?.find((g) => g.id === activeGroupId);
 
+  if (compact) {
+    return (
+      <Link
+        href="/groups"
+        className="flex max-w-[50%] items-center gap-1 rounded-full border border-divider px-3 py-1.5 text-[13px] text-accent hover:underline"
+        aria-label="가족 공간 전환"
+      >
+        <span className="truncate">{active?.name ?? '우리 가족의 오늘'}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+      </Link>
+    );
+  }
+
   return (
     <div className="flex flex-col">
       <Link href="/groups" className="flex items-center gap-1 text-[11px] tracking-wide text-accent hover:underline" aria-label="가족 공간 전환">
         {active?.name ?? '우리 가족의 오늘'}
         <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
       </Link>
-      {compact ? null : (
-        <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.15em] text-ink" aria-label="홈으로">
-          ONGI
-        </Link>
-      )}
+      <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.15em] text-ink" aria-label="홈으로">
+        ONGI
+      </Link>
     </div>
   );
 }

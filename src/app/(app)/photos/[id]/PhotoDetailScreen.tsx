@@ -146,11 +146,11 @@ export function PhotoDetailScreen({ id }: { id: string }) {
           {photo.data.caption ? <p className="my-3.5 font-serif text-[19px] leading-8 text-ink">&ldquo;{photo.data.caption}&rdquo;</p> : null}
 
           <div className="flex items-center gap-3.5 border-b border-divider pb-3.5">
-            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex items-center gap-1.5 text-[13px] text-accent-700">
+            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex shrink-0 items-center gap-1.5 text-[13px] text-accent-700">
               <Heart className="h-[18px] w-[18px]" strokeWidth={1.75} fill={photo.data.likedByMe ? 'currentColor' : 'transparent'} />
               <span className="tabular-nums">{photo.data.likeCount}</span>
             </button>
-            <span className="text-xs text-muted">{likeSummary}</span>
+            <p className="min-w-0 flex-1 text-xs leading-5 text-muted">{likeSummary}</p>
           </div>
 
           <ul className="flex flex-col gap-3.5 py-3.5">
@@ -174,9 +174,13 @@ export function PhotoDetailScreen({ id }: { id: string }) {
             })}
           </ul>
 
-          <form onSubmit={send} className="sticky bottom-20 flex items-center gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0">
-            <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="따뜻한 한마디를 남겨보세요" aria-label="댓글" />
-            <Button type="submit" disabled={draft.trim().length === 0 || addComment.isPending}>
+          {/* 모바일: 하단 탭바(높이 + safe-area) 바로 위에 고정 / 데스크톱: 화면 맨 아래 */}
+          <form
+            onSubmit={send}
+            className="sticky bottom-[calc(3.875rem+env(safe-area-inset-bottom))] flex items-center gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0"
+          >
+            <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="따뜻한 한마디를 남겨보세요" aria-label="댓글" className="min-w-0 flex-1" />
+            <Button type="submit" disabled={draft.trim().length === 0 || addComment.isPending} className="shrink-0 whitespace-nowrap">
               보내기
             </Button>
           </form>

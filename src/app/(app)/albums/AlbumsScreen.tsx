@@ -8,7 +8,7 @@ import { Button, IconButton } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Spinner } from '@/components/ui/State';
-import { useAlbums, useCreateAlbum, useDeleteAlbum, useFeed, useHasNoGroup, useRenameAlbum, useUnfiledPhotos } from '@/lib/queries';
+import { useAlbums, useCreateAlbum, useDeleteAlbum, useFeed, useHasNoGroup, useMembers, useRenameAlbum, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
 import type { Album } from '@/types';
 
@@ -48,6 +48,9 @@ export function AlbumsScreen() {
   const albums = useAlbums();
   const unfiled = useUnfiledPhotos(groupId);
   const allPhotos = useFeed();
+  const members = useMembers();
+  // 앨범 추가·이름 변경·삭제는 그룹 관리자만
+  const isAdmin = members.data?.find((m) => m.isMe)?.role === 'admin';
   const createAlbum = useCreateAlbum();
   const renameAlbum = useRenameAlbum();
   const deleteAlbum = useDeleteAlbum();
@@ -82,9 +85,11 @@ export function AlbumsScreen() {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-end justify-between">
         <h1 className="font-serif text-3xl font-semibold text-ink">앨범</h1>
-        <Button onClick={promptNew} disabled={createAlbum.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
-          {createAlbum.isPending ? '만드는 중…' : '새 앨범'}
-        </Button>
+        {isAdmin ? (
+          <Button onClick={promptNew} disabled={createAlbum.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
+            {createAlbum.isPending ? '만드는 중…' : '새 앨범'}
+          </Button>
+        ) : null}
       </div>
 
       <SectionHeader title="가족 앨범" meta={albums.data ? `${albums.data.length}개` : undefined} />
@@ -99,7 +104,7 @@ export function AlbumsScreen() {
             <AlbumCard href="/albums/unfiled" coverUrl={unfiled.data[0].url} title="미분류" meta={`${unfiled.data.length}장 · 앨범에 담기 전 사진`} />
           ) : null}
           {albums.data?.map((album) => (
-            <AlbumCard key={album.id} href={`/albums/${album.id}`} coverUrl={album.coverUrl} title={album.title} meta={`${album.photoCount}장 · ${album.meta}`} onMenu={() => openMenu(album)} />
+            <AlbumCard key={album.id} href={`/albums/${album.id}`} coverUrl={album.coverUrl} title={album.title} meta={`${album.photoCount}장 · ${album.meta}`} onMenu={isAdmin ? () => openMenu(album) : undefined} />
           ))}
         </ul>
       )}
