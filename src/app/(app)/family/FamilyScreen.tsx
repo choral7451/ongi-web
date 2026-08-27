@@ -122,7 +122,7 @@ export function FamilyScreen() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-ink">
                     {member.name}
-                    {member.realName ? ` (${member.realName})` : ''}
+                    {member.realName && member.realName !== member.name ? ` (${member.realName})` : ''}
                     {member.isMe ? <span className="ml-1.5 text-[11px] text-muted">(나)</span> : null}
                   </p>
                   <p className="text-[11px] tabular-nums text-muted">
