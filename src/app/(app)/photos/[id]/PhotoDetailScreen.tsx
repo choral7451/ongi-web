@@ -16,7 +16,7 @@ import { useActiveGroupId } from '@/lib/store/session';
 import { formatFullDateTime, formatTime } from '@/lib/utils/format';
 import type { Comment } from '@/types';
 
-/** 사진 상세 — 반응 · 댓글. ctx(feed | all | unfiled | album:<id>)가 있으면 이전/다음 사진으로 이동 */
+/** 사진 상세 — 반응 · 댓글. 앨범 계열 ctx(all | unfiled | album:<id>)로 들어오면 이전/다음 사진으로 이동. 홈 피드(feed)에서는 단건만 */
 export function PhotoDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const ctx = useSearchParams().get('ctx') ?? '';
@@ -28,7 +28,8 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const feed = useFeed();
   const albumPhotos = useAlbumPhotos(ctxAlbumId);
   const unfiled = useUnfiledPhotos(ctx === 'unfiled' ? groupId : '');
-  const list = ctx === 'feed' || ctx === 'all' ? feed.data : ctxAlbumId ? albumPhotos.data : ctx === 'unfiled' ? unfiled.data : undefined;
+  // 홈 피드에서 들어온 경우(ctx=feed)는 이전/다음 없이 그 사진만 본다
+  const list = ctx === 'all' ? feed.data : ctxAlbumId ? albumPhotos.data : ctx === 'unfiled' ? unfiled.data : undefined;
   const index = list?.findIndex((p) => p.id === id) ?? -1;
   const prev = list && index > 0 ? list[index - 1] : undefined;
   const next = list && index >= 0 && index < list.length - 1 ? list[index + 1] : undefined;
