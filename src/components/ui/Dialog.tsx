@@ -122,7 +122,7 @@ function DialogView({ state, close }: { state: DialogState; close: () => void })
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={state.options.placeholder}
-              className="w-full rounded-md border border-divider px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              className="w-full rounded-md border border-divider px-3 py-2 text-base text-ink outline-none focus:border-accent md:text-sm"
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={dismiss}>

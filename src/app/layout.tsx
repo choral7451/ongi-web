@@ -26,6 +26,9 @@ export const viewport: Viewport = {
   themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
+  // iOS Safari 가 16px 미만 입력창 포커스 시 자동 확대하는 것을 막음 (핀치 줌도 함께 비활성)
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

@@ -146,7 +146,7 @@ function AlbumPicker({ groupId, value, onChange }: { groupId: string; value: str
   const albums = useAlbumsOf(groupId);
   if (!albums.data || albums.data.length === 0) return null;
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full rounded-md border border-divider bg-bg px-2 py-1.5 text-xs text-ink" aria-label="앨범 선택">
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full rounded-md border border-divider bg-bg px-2 py-1.5 text-base text-ink md:text-xs" aria-label="앨범 선택">
       <option value="">앨범 없음 (미분류)</option>
       {albums.data.map((a) => (
         <option key={a.id} value={a.id}>

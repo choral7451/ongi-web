@@ -55,3 +55,12 @@ body {
   border-color: var(--color-divider);
   border-width: 0.5px;
 }
+
+/* iOS Safari 자동 확대 방지 — 모바일에서 폼 컨트롤은 최소 16px */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
