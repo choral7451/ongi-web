@@ -9,6 +9,7 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/State';
 import { Tag } from '@/components/ui/Tag';
 import { useBlockMember, useFamily, useHasNoGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
+import { buildInviteMessage } from '@/lib/utils/invite';
 import type { Member } from '@/types';
 
 function roleTag(member: Member) {
@@ -79,7 +80,7 @@ export function FamilyScreen() {
   };
 
   const shareCode = async () => {
-    const text = `온기에서 우리 가족과 함께해요! 앱을 설치하고 초대 코드 ${inviteCode} 를 입력해 주세요.`;
+    const text = buildInviteMessage({ groupName: family.data?.name, inviteCode, expiresInDays: family.data?.inviteExpiresInDays });
     if (navigator.share) {
       try {
         await navigator.share({ text });

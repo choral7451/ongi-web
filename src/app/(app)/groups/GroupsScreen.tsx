@@ -14,14 +14,17 @@ import { cn } from '@/lib/utils/cn';
 /** 가족 공간 전환 · 만들기 · 초대 코드 참여 */
 export function GroupsScreen() {
   const router = useRouter();
-  const tab = useSearchParams().get('tab');
+  const searchParams = useSearchParams();
+  // 초대 링크(/groups?code=ONGI-XXXX)로 들어오면 참여 탭 + 코드 프리필
+  const codeParam = searchParams.get('code')?.trim().toUpperCase() ?? '';
+  const tab = searchParams.get('tab') ?? (codeParam ? 'join' : null);
   const groups = useMyGroups();
   const activeGroupId = useSession((s) => s.activeGroupId);
   const setActiveGroup = useSession((s) => s.setActiveGroup);
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
   const [newName, setNewName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(codeParam);
   const [error, setError] = useState<string | null>(null);
 
   const switchTo = (groupId: string) => {
