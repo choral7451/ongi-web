@@ -50,16 +50,6 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const backHref = ctxAlbumId ? `/albums/${ctxAlbumId}` : ctx === 'all' ? '/albums/all' : ctx === 'unfiled' ? '/albums/unfiled' : '/feed';
   const openPhotoActions = usePhotoActions(() => router.replace(backHref));
 
-  const likeSummary = photo.data
-    ? photo.data.likeCount === 0
-      ? '가장 먼저 따뜻함을 전해보세요'
-      : photo.data.likedByMe
-        ? photo.data.likeCount === 1
-          ? '내가 따뜻해했어요'
-          : `나와 가족 ${photo.data.likeCount - 1}명이 따뜻해했어요`
-        : `가족 ${photo.data.likeCount}명이 따뜻해했어요`
-    : '';
-
   const openCommentActions = (comment: Comment) => {
     if (!members.data) return dialog.alert('잠시만요', '구성원 정보를 불러오는 중이에요.');
     const isMine = me?.id === comment.authorId;
@@ -141,17 +131,13 @@ export function PhotoDetailScreen({ id }: { id: string }) {
                 {photo.data.location ? ` · ${photo.data.location}` : ''}
               </p>
             </div>
+            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-[13px] text-accent-700 hover:bg-accent-100">
+              <Heart className="h-5 w-5" strokeWidth={1.75} fill={photo.data.likedByMe ? 'currentColor' : 'transparent'} />
+              <span className="tabular-nums">{photo.data.likeCount}</span>
+            </button>
           </div>
 
           {photo.data.caption ? <p className="my-3.5 font-serif text-[19px] leading-8 text-ink">&ldquo;{photo.data.caption}&rdquo;</p> : null}
-
-          <div className="flex items-center gap-3.5 border-b border-divider pb-3.5">
-            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex shrink-0 items-center gap-1.5 text-[13px] text-accent-700">
-              <Heart className="h-[18px] w-[18px]" strokeWidth={1.75} fill={photo.data.likedByMe ? 'currentColor' : 'transparent'} />
-              <span className="tabular-nums">{photo.data.likeCount}</span>
-            </button>
-            <p className="min-w-0 flex-1 text-xs leading-5 text-muted">{likeSummary}</p>
-          </div>
 
           <ul className="flex flex-col gap-3.5 py-3.5">
             {comments.data?.map((comment) => {
