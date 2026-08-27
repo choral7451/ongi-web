@@ -1,6 +1,7 @@
 import { Heart, Images, Lock, Users } from 'lucide-react';
 import Link from 'next/link';
 import { LandingCta } from '@/components/landing/LandingCta';
+import { LandingRedirect } from '@/components/landing/LandingRedirect';
 
 const FEATURES = [
   { Icon: Users, title: '가족만의 비공개 공간', body: '초대 코드로만 들어올 수 있어요. 우리 가족끼리만 보는 사진첩이에요.' },
@@ -9,10 +10,11 @@ const FEATURES = [
   { Icon: Lock, title: '안심하고 나누기', body: '사진은 초대된 구성원에게만 공개되고, 탈퇴하면 올린 사진이 모두 삭제돼요.' },
 ];
 
-/** 공개 랜딩 — 로그인 전 첫 화면. 로그인 상태면 CTA 가 피드로 안내한다 */
+/** 공개 랜딩 — 로그인 전 첫 화면. 로그인 상태면 피드로 리다이렉트 */
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
+      <LandingRedirect />
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <span className="font-serif text-xl font-semibold tracking-[0.2em] text-ink">ONGI</span>
         <nav className="flex items-center gap-5 text-sm text-neutral-700" aria-label="상단 메뉴">
