@@ -102,10 +102,8 @@ export function FamilyScreen() {
   return (
     <div className="mx-auto max-w-3xl">
       <header className="mb-5">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-accent">우리 가족</p>
-        <h1 className="font-serif text-3xl font-semibold text-ink">{family.data?.name ?? ' '}</h1>
         {family.data ? (
-          <p className="mt-1 text-xs tabular-nums text-muted">
+          <p className="text-xs tabular-nums text-muted">
             구성원 {family.data.memberCount}명 · 사진 {family.data.photoCount}장 · {family.data.sinceLabel}
           </p>
         ) : null}
