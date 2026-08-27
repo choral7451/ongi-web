@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/Input';
 import { ErrorState, Spinner } from '@/components/ui/State';
 import { useAddComment, useAlbumPhotos, useAlbums, useComments, useDeleteComment, useFeed, useMembers, usePhoto, useReport, useToggleLike, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
+import { cn } from '@/lib/utils/cn';
 import { formatFullDateTime, formatTime } from '@/lib/utils/format';
 import type { Comment } from '@/types';
 
@@ -84,6 +85,16 @@ export function PhotoDetailScreen({ id }: { id: string }) {
 
   const navTo = (photoId: string) => router.replace(`/photos/${photoId}?ctx=${encodeURIComponent(ctx)}`);
 
+  // 이전/다음으로 넘길 때 새 이미지가 로드될 때까지 직전 이미지를 깔아두고 페이드로 교체 (빈 박스 깜빡임 방지)
+  const [shown, setShown] = useState<{ url: string; aspectRatio: number } | null>(null);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const incomingLoaded = loadedUrl === photo.data?.url;
+  const commitIncoming = () => {
+    if (!photo.data) return;
+    setLoadedUrl(photo.data.url);
+    setShown({ url: photo.data.url, aspectRatio: photo.data.aspectRatio || 1 });
+  };
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-4 flex items-center justify-between">
@@ -109,8 +120,20 @@ export function PhotoDetailScreen({ id }: { id: string }) {
         <ErrorState message="사진을 불러오지 못했어요." onRetry={() => photo.refetch()} />
       ) : (
         <>
-          <div className="relative overflow-hidden rounded-md bg-neutral-200" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
-            <Image src={photo.data.url} alt={photo.data.caption ?? '사진'} fill priority sizes="(min-width: 768px) 768px, 100vw" className="object-contain" />
+          <div className="relative overflow-hidden rounded-md bg-neutral-200 transition-[aspect-ratio] duration-200" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
+            {shown && shown.url !== photo.data.url && !incomingLoaded ? (
+              <Image src={shown.url} alt="" aria-hidden fill sizes="(min-width: 768px) 768px, 100vw" className="object-contain" />
+            ) : null}
+            <Image
+              key={photo.data.url}
+              src={photo.data.url}
+              alt={photo.data.caption ?? '사진'}
+              fill
+              priority
+              sizes="(min-width: 768px) 768px, 100vw"
+              onLoad={commitIncoming}
+              className={cn('object-contain transition-opacity duration-200', incomingLoaded || !shown ? 'opacity-100' : 'opacity-0')}
+            />
             {prev ? (
               <button type="button" onClick={() => navTo(prev.id)} aria-label="이전 사진" className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white">
                 <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { albumsApi, familyApi, groupsApi, photosApi, profileApi, reportsApi } from '@/lib/api';
 import type { UploadPayload } from '@/lib/api/photos';
@@ -24,7 +24,6 @@ export const queryKeys = {
 };
 
 /** 같은 사진이 여러 목록 캐시에 존재한다 — 좋아요·삭제 시 전부 함께 갱신 */
-const PHOTO_LIST_KEYS = new Set(['feed', 'albumPhotos', 'unfiledPhotos']);
 
 // ── 그룹 ──────────────────────────────────────────────
 
@@ -64,8 +63,27 @@ export function useFeed() {
   return useQuery({ queryKey: queryKeys.feed(groupId), queryFn: () => photosApi.getFeed(groupId), enabled: !!groupId });
 }
 
-export const usePhoto = (id: string) =>
-  useQuery({ queryKey: queryKeys.photo(id), queryFn: () => photosApi.getPhoto(id), enabled: !!id });
+const PHOTO_LIST_KEYS = new Set(['feed', 'albumPhotos', 'unfiledPhotos']);
+
+/** 목록 캐시(피드·앨범·미분류)에 이미 있는 사진 — 상세 진입/이전·다음 이동 시 서버 응답 전에 바로 보여준다 */
+function findPhotoInLists(qc: QueryClient, id: string): Photo | undefined {
+  for (const [, data] of qc.getQueriesData<Photo[]>({ predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) })) {
+    const found = data?.find((p) => p.id === id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+export function usePhoto(id: string) {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: queryKeys.photo(id),
+    queryFn: () => photosApi.getPhoto(id),
+    enabled: !!id,
+    // 이전/다음으로 넘길 때 스피너로 바뀌었다 다시 그려지는 깜빡임 방지
+    placeholderData: () => findPhotoInLists(qc, id),
+  });
+}
 
 export const useAlbumPhotos = (albumId: string) =>
   useQuery({ queryKey: queryKeys.albumPhotos(albumId), queryFn: () => photosApi.getPhotosByAlbum(albumId), enabled: !!albumId });
@@ -74,7 +92,7 @@ export const useUnfiledPhotos = (groupId: string) =>
   useQuery({ queryKey: queryKeys.unfiledPhotos(groupId), queryFn: () => photosApi.getUnfiledPhotos(groupId), enabled: !!groupId });
 
 export const useComments = (photoId: string) =>
-  useQuery({ queryKey: queryKeys.comments(photoId), queryFn: () => photosApi.getComments(photoId), enabled: !!photoId });
+  useQuery({ queryKey: queryKeys.comments(photoId), queryFn: () => photosApi.getComments(photoId), enabled: !!photoId, placeholderData: keepPreviousData });
 
 export function useAlbums() {
   const groupId = useActiveGroupId();
