@@ -1,26 +1,57 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 온기 디자인 토큰 — 앱(ongi/src/theme)과 1:1 대응 */
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #f1f2f4;
+  --color-ink: #101114;
+  --color-muted: rgba(16, 17, 20, 0.55);
+  --color-divider: rgba(16, 17, 20, 0.14);
+  --color-danger: #d92d20;
+
+  --color-neutral-100: #f7f8fa;
+  --color-neutral-200: #eceef1;
+  --color-neutral-300: #d9dce1;
+  --color-neutral-400: #b9bdc4;
+  --color-neutral-500: #999ea6;
+  --color-neutral-600: #7b8087;
+  --color-neutral-700: #5e6269;
+  --color-neutral-800: #42454b;
+  --color-neutral-900: #2a2c30;
+
+  --color-accent: #0164ff;
+  --color-accent-100: #e9f0ff;
+  --color-accent-200: #d0e0ff;
+  --color-accent-300: #a7c5ff;
+  --color-accent-400: #6f9eff;
+  --color-accent-500: #2e7aff;
+  --color-accent-600: #0164ff;
+  --color-accent-700: #0150cd;
+  --color-accent-800: #023c99;
+  --color-accent-900: #062a63;
+
+  --font-sans: var(--font-noto-sans), 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-serif: var(--font-noto-serif), 'Apple Myungjo', serif;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 헤어라인 구분선 */
+.hairline {
+  border-color: var(--color-divider);
+  border-width: 0.5px;
 }
