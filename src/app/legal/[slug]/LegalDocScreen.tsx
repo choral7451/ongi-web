@@ -1,19 +1,28 @@
 'use client';
 
 import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ErrorState, Spinner } from '@/components/ui/State';
 import { useLegalDoc } from '@/lib/queries';
+import { useSession } from '@/lib/store/session';
 
 export function LegalDocScreen({ slug, fallbackTitle }: { slug: string; fallbackTitle: string }) {
   const doc = useLegalDoc(slug);
+  const router = useRouter();
+  const isAuthenticated = useSession((s) => s.isAuthenticated);
+
+  // 들어온 곳(나 탭·로그인 화면)으로 돌아간다. 새 탭 등 히스토리가 없으면 상태에 맞는 기본 화면으로
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.replace(isAuthenticated ? '/profile' : '/login');
+  };
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-6">
       <div className="mb-4 flex items-center gap-2">
-        <Link href="/" aria-label="돌아가기" className="rounded-md p-1.5 hover:bg-neutral-100">
+        <button type="button" onClick={goBack} aria-label="돌아가기" className="rounded-md p-1.5 hover:bg-neutral-100">
           <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
-        </Link>
+        </button>
         <span className="font-serif text-base font-semibold text-ink">{doc.data?.title ?? fallbackTitle}</span>
       </div>
 
