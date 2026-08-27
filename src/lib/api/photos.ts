@@ -1,5 +1,5 @@
 import type { Comment, Photo } from '@/types';
-import { del, post, postForm, request } from './client';
+import { del, post, postForm, put, request } from './client';
 import { prepareImage } from '@/lib/utils/image';
 
 async function photoList(path: string): Promise<Photo[]> {
@@ -18,6 +18,8 @@ export async function getComments(photoId: string): Promise<Comment[]> {
 }
 
 export const toggleLike = (photoId: string) => post<Photo>(`/ongi/photos/${photoId}/like`);
+export const updatePhoto = (p: { photoId: string; caption: string | null; albumId: string | null }) =>
+  put<Photo>(`/ongi/photos/${p.photoId}`, { caption: p.caption, albumId: p.albumId });
 export const deletePhoto = (photoId: string) => del(`/ongi/photos/${photoId}`);
 export const deleteComment = (p: { photoId: string; commentId: string }) =>
   del(`/ongi/photos/${p.photoId}/comments/${p.commentId}`);

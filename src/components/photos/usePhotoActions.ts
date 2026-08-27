@@ -1,17 +1,19 @@
 'use client';
 
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
-import { useBlockMember, useDeletePhoto, useMembers, useReport } from '@/lib/queries';
+import { useAlbums, useBlockMember, useDeletePhoto, useMembers, useReport, useUpdatePhoto } from '@/lib/queries';
 import type { Photo } from '@/types';
 
 export const REPORT_DONE_MESSAGE = '신고가 접수됐어요. 운영진이 24시간 안에 확인하고 필요한 조치를 할게요.';
 
-/** 사진 ⋯ 메뉴 — 삭제(작성자·관리자) · 신고 · 작성자 차단 (App Store/UGC 요건과 동일) */
+/** 사진 ⋯ 메뉴 — 수정·삭제(작성자·관리자) · 신고 · 작성자 차단 (App Store/UGC 요건과 동일) */
 export function usePhotoActions(onDeleted?: () => void) {
   const dialog = useDialog();
   const alertError = useAlertError();
   const members = useMembers();
   const deletePhoto = useDeletePhoto();
+  const updatePhoto = useUpdatePhoto();
+  const albums = useAlbums();
   const report = useReport();
   const block = useBlockMember();
 
@@ -23,11 +25,34 @@ export function usePhotoActions(onDeleted?: () => void) {
     const me = members.data.find((m) => m.isMe);
     const author = members.data.find((m) => m.id === photo.authorId);
     const isMine = me?.id === photo.authorId;
-    const canDelete = isMine || me?.role === 'admin';
+    // 수정·삭제는 같은 규칙 — 작성자 본인 또는 관리자
+    const canEdit = isMine || me?.role === 'admin';
+
+    const editCaption = async () => {
+      const value = await dialog.prompt({ title: '문구 수정', confirmText: '저장', defaultValue: photo.caption ?? '', placeholder: '사진에 남길 한마디' });
+      if (value === null) return;
+      const caption = value.trim() || null;
+      if (caption === (photo.caption ?? null)) return;
+      updatePhoto.mutate({ photoId: photo.id, caption, albumId: photo.albumId ?? null }, { onError: alertError('수정 실패') });
+    };
+
+    const moveAlbum = async () => {
+      const list = albums.data ?? [];
+      const choose = (albumId: string | null) => {
+        if (albumId === (photo.albumId ?? null)) return;
+        updatePhoto.mutate({ photoId: photo.id, caption: photo.caption ?? null, albumId }, { onError: alertError('앨범 변경 실패') });
+      };
+      await dialog.actions('앨범 선택', [
+        { label: `앨범 없음 (미분류)${photo.albumId ? '' : '  ✓'}`, onPress: () => choose(null) },
+        ...list.map((album) => ({ label: `${album.title}${album.id === photo.albumId ? '  ✓' : ''}`, onPress: () => choose(album.id) })),
+      ]);
+    };
 
     await dialog.actions('사진', [
-      ...(canDelete
+      ...(canEdit
         ? [
+            { label: '문구 수정', onPress: editCaption },
+            { label: '앨범 변경', onPress: moveAlbum },
             {
               label: '사진 삭제',
               destructive: true,

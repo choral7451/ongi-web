@@ -170,6 +170,25 @@ export function useToggleLike() {
   });
 }
 
+/** 사진 수정(문구·앨범) — 상세·목록 캐시 바꿔치기 + 앨범 목록·앨범별 사진 목록 갱신 */
+export function useUpdatePhoto() {
+  const qc = useQueryClient();
+  const groupId = useActiveGroupId();
+  return useMutation({
+    mutationFn: photosApi.updatePhoto,
+    onSuccess: (photo) => {
+      qc.setQueryData(queryKeys.photo(photo.id), photo);
+      qc.setQueriesData<Photo[]>(
+        { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
+        (old) => old?.map((p) => (p.id === photo.id ? photo : p)),
+      );
+      qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
+      qc.invalidateQueries({ queryKey: ['albumPhotos'] });
+      qc.invalidateQueries({ queryKey: ['unfiledPhotos'] });
+    },
+  });
+}
+
 export function useDeletePhoto() {
   const qc = useQueryClient();
   const groupId = useActiveGroupId();
