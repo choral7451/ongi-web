@@ -188,6 +188,24 @@ export function useToggleLike() {
   });
 }
 
+/** 사진 일괄 앨범 이동 — 옮긴 사진의 albumId 를 캐시에 반영하고 앨범 목록·앨범별/미분류 목록을 갱신 */
+export function useMovePhotos() {
+  const qc = useQueryClient();
+  const groupId = useActiveGroupId();
+  return useMutation({
+    mutationFn: photosApi.movePhotos,
+    onSuccess: ({ movedIds }, { albumId }) => {
+      const moved = new Set(movedIds);
+      const patch = (p: Photo): Photo => (moved.has(p.id) ? { ...p, albumId: albumId ?? undefined } : p);
+      qc.setQueriesData<Photo[]>({ predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) }, (old) => old?.map(patch));
+      for (const id of moved) qc.setQueryData<Photo>(queryKeys.photo(id), (old) => (old ? patch(old) : old));
+      qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
+      qc.invalidateQueries({ queryKey: ['albumPhotos'] });
+      qc.invalidateQueries({ queryKey: ['unfiledPhotos'] });
+    },
+  });
+}
+
 /** 사진 일괄 삭제 — 삭제된 것만 캐시에서 제거하고 앨범/그룹 카운트를 갱신 */
 export function useDeletePhotos() {
   const qc = useQueryClient();

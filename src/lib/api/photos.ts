@@ -19,6 +19,9 @@ export async function getComments(photoId: string): Promise<Comment[]> {
 
 export const toggleLike = (photoId: string) => post<Photo>(`/ongi/photos/${photoId}/like`);
 export const deletePhoto = (photoId: string) => del(`/ongi/photos/${photoId}`);
+/** 사진 일괄 앨범 이동 — albumId null 이면 미분류. 권한 없거나 다른 그룹 사진은 skippedIds */
+export const movePhotos = (p: { photoIds: string[]; albumId: string | null }) =>
+  post<{ movedIds: string[]; skippedIds: string[] }>('/ongi/photos/move', p);
 /** 사진 일괄 삭제 — 사진마다 작성자·관리자 권한을 서버가 확인하고, 권한 없는 것은 skippedIds 로 돌려준다 */
 export const deletePhotos = (photoIds: string[]) => post<{ deletedIds: string[]; skippedIds: string[] }>('/ongi/photos/delete', { photoIds });
 export const deleteComment = (p: { photoId: string; commentId: string }) =>

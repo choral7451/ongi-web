@@ -1,12 +1,12 @@
 'use client';
 
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { ChevronLeft, FolderInput, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
-import { useAlbumPhotos, useAlbums, useDeletePhotos, useFeed, useMembers, useUnfiledPhotos } from '@/lib/queries';
+import { useAlbumPhotos, useAlbums, useDeletePhotos, useFeed, useMembers, useMovePhotos, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
 import type { Photo } from '@/types';
 
@@ -31,6 +31,7 @@ export function AlbumDetailScreen({ id }: { id: string }) {
   const me = members.data?.find((m) => m.isMe);
   const canDelete = (photo: Photo) => !!me && (me.role === 'admin' || photo.authorId === me.id);
   const deletePhotos = useDeletePhotos();
+  const movePhotos = useMovePhotos();
   const [selecting, setSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deletable = (query.data ?? []).filter(canDelete);
@@ -46,6 +47,27 @@ export function AlbumDetailScreen({ id }: { id: string }) {
       else next.add(photo.id);
       return next;
     });
+  const pickAlbumAndMove = async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    const move = (albumId: string | null) =>
+      movePhotos.mutate(
+        { photoIds: [...selectedIds], albumId },
+        {
+          onSuccess: ({ skippedIds }) => {
+            exitSelect();
+            if (skippedIds.length > 0) dialog.alert('일부 사진은 옮기지 못했어요', `${skippedIds.length}장은 권한이 없어요.`);
+          },
+          onError: alertError('앨범 이동 실패'),
+        },
+      );
+    const targets = (albums.data ?? []).filter((a) => a.id !== id);
+    await dialog.actions(`${count}장을 옮길 앨범`, [
+      ...(isUnfiled ? [] : [{ label: '앨범 없음 (미분류)', onPress: () => move(null) }]),
+      ...targets.map((a) => ({ label: a.title, onPress: () => move(a.id) })),
+    ]);
+  };
+
   const confirmDelete = async () => {
     const count = selectedIds.size;
     if (count === 0) return;
@@ -90,11 +112,14 @@ export function AlbumDetailScreen({ id }: { id: string }) {
         canSelect={canDelete}
       />
       {selecting ? (
-        <div className="sticky bottom-[calc(3.875rem+env(safe-area-inset-bottom))] mt-4 flex items-center justify-between gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0">
+        <div className="sticky bottom-[calc(3.875rem+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-between gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0">
           <span className="text-sm tabular-nums text-ink">{selectedIds.size}장 선택</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="secondary" onClick={() => setSelectedIds(selectedIds.size === deletable.length ? new Set() : new Set(deletable.map((p) => p.id)))}>
               {selectedIds.size === deletable.length ? '선택 해제' : '모두 선택'}
+            </Button>
+            <Button onClick={pickAlbumAndMove} disabled={selectedIds.size === 0 || movePhotos.isPending} icon={<FolderInput className="h-4 w-4" strokeWidth={1.75} />}>
+              {movePhotos.isPending ? '이동 중…' : '앨범 이동'}
             </Button>
             <Button variant="danger" onClick={confirmDelete} disabled={selectedIds.size === 0 || deletePhotos.isPending} icon={<Trash2 className="h-4 w-4" strokeWidth={1.75} />}>
               {deletePhotos.isPending ? '삭제 중…' : `${selectedIds.size}장 삭제`}
