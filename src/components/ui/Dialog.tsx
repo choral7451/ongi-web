@@ -96,7 +96,7 @@ function DialogView({ state, close }: { state: DialogState; close: () => void })
   const message = state.kind === 'confirm' || state.kind === 'prompt' ? state.options.message : state.kind === 'alert' ? state.message : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" onClick={dismiss} role="presentation">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={dismiss} role="presentation">
       <div
         role="dialog"
         aria-modal="true"
