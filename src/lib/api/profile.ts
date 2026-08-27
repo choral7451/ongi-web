@@ -18,7 +18,7 @@ export const updateMyName = (name: string) => put<Me>('/ongi/users/me', { name }
 export const deleteAccount = () => del('/ongi/users/me');
 
 export async function uploadAvatar(file: File): Promise<Me> {
-  const blob = await prepareImage(file, { ratio: 1, maxSize: 400 });
+  const { blob } = await prepareImage(file, { ratio: 1, maxSize: 400 });
   const form = new FormData();
   form.append('avatarFile', blob, 'avatar.jpg');
   return postForm<Me>('/ongi/users/me/avatar', form);

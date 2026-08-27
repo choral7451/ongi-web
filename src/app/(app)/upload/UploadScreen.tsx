@@ -15,12 +15,8 @@ import { cn } from '@/lib/utils/cn';
 import { makeThumbnail } from '@/lib/utils/image';
 
 const MAX_FILES = UPLOAD_MAX_SELECT;
-const RATIOS = [
-  { value: 1, label: '정방형 1:1' },
-  { value: 0.8, label: '세로 4:5' },
-] as const;
 
-/** 사진 올리기 — 파일 선택 → 비율·문구·게시할 공간/앨범 → 업로드 */
+/** 사진 올리기 — 파일 선택 → 문구·게시할 공간/앨범 → 업로드 (원본 비율 유지, 긴 변 2048 축소) */
 export function UploadScreen() {
   const router = useRouter();
   const dialog = useDialog();
@@ -32,7 +28,6 @@ export function UploadScreen() {
 
   const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [ratio, setRatio] = useState<number>(1);
   const [caption, setCaption] = useState('');
   // 사용자가 손대기 전(null)에는 활성 그룹이 기본 게시 대상
   const [pickedGroupIds, setTargetGroupIds] = useState<string[] | null>(null);
@@ -96,7 +91,6 @@ export function UploadScreen() {
     upload.mutate(
       {
         files: targetFiles,
-        ratio,
         caption: withCaption ? caption.trim() || undefined : undefined,
         targets: targetGroupIds.map((groupId) => ({ groupId, albumId: albumByGroup[groupId] || undefined })),
         onProgress: (done, total) => setProgress({ done, total }),
@@ -154,7 +148,7 @@ export function UploadScreen() {
       <SectionHeader title="사진" meta={`${files.length} / ${MAX_FILES}`} />
       <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
         {previews.map((p, i) => (
-          <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: ratio }}>
+          <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
             {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
             {p.url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -166,7 +160,7 @@ export function UploadScreen() {
           </div>
         ))}
         {files.length < MAX_FILES ? (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: ratio }}>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
             <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
             사진 선택
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
@@ -174,22 +168,6 @@ export function UploadScreen() {
         ) : null}
       </div>
 
-      <div className="mt-6">
-        <SectionHeader title="비율" size="sm" />
-        <div className="flex gap-2">
-          {RATIOS.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              onClick={() => setRatio(r.value)}
-              className={cn('rounded-md border px-3 py-1.5 text-xs', ratio === r.value ? 'border-accent bg-accent-100 text-accent-700' : 'border-divider text-ink hover:bg-neutral-100')}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 text-[11px] text-muted">선택한 비율로 가운데를 잘라 JPEG 로 변환해 올려요.</p>
-      </div>
 
       <div className="mt-6">
         <SectionHeader title="한마디" size="sm" />

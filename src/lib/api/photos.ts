@@ -32,8 +32,6 @@ export interface UploadTarget {
 export interface UploadPayload {
   files: File[];
   caption?: string;
-  /** 크롭 비율 (width/height) — 1 정방형, 0.8 세로(4:5) */
-  ratio: number;
   targets: UploadTarget[];
   /** 진행률 콜백 — 완료(성공+실패)된 장수 / 전체 */
   onProgress?: (done: number, total: number) => void;
@@ -54,14 +52,14 @@ export const UPLOAD_MAX_SELECT = 500;
 
 /** 청크 하나 — 변환 → S3 업로드 → 게시. 실패하면 throw */
 async function uploadChunk(files: File[], payload: UploadPayload, withCaption: boolean): Promise<Photo[]> {
-  const prepared = await Promise.all(files.map((file) => prepareImage(file, { ratio: payload.ratio, maxSize: 2048 })));
+  const prepared = await Promise.all(files.map((file) => prepareImage(file, { maxSize: 2048 })));
 
   const form = new FormData();
-  prepared.forEach((blob, index) => form.append('photoFiles', blob, `photo-${index + 1}.jpg`));
+  prepared.forEach((item, index) => form.append('photoFiles', item.blob, `photo-${index + 1}.jpg`));
   const uploaded = await postForm<{ urls: string[] }>('/ongi/photos/files', form);
 
   const result = await post<{ photos: Photo[] }>('/ongi/photos', {
-    photos: uploaded.urls.map((url) => ({ url, aspectRatio: payload.ratio })),
+    photos: uploaded.urls.map((url, index) => ({ url, aspectRatio: prepared[index].aspectRatio })),
     caption: withCaption ? payload.caption : undefined,
     targets: payload.targets.map((t) => ({ groupId: t.groupId, albumId: t.albumId, personIds: [] })),
   });
