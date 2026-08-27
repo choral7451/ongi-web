@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus, X } from 'lucide-react';
+import { ImagePlus, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { NoGroupState } from '@/components/NoGroupState';
@@ -126,8 +126,29 @@ export function UploadScreen() {
 
   if (hasNoGroup) return <NoGroupState />;
 
+  const percent = progress ? Math.round((progress.done / Math.max(progress.total, 1)) * 100) : 0;
+
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl" aria-busy={upload.isPending}>
+      {upload.isPending ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/85" role="status" aria-live="polite" aria-label="사진 올리는 중">
+          <div className="flex min-w-56 flex-col items-center gap-2.5 rounded-xl border border-divider bg-bg px-7 py-6 shadow-sm">
+            <Loader2 className="h-7 w-7 animate-spin text-accent" />
+            <p className="font-serif text-base font-semibold text-ink">사진을 올리고 있어요</p>
+            {progress ? (
+              <>
+                <p className="text-[22px] tabular-nums text-accent-700">
+                  {progress.done} / {progress.total}
+                </p>
+                <div className="h-1 w-44 overflow-hidden rounded-full bg-neutral-200">
+                  <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
+                </div>
+              </>
+            ) : null}
+            <p className="text-[11px] text-muted">완료될 때까지 이 페이지를 닫지 말아 주세요</p>
+          </div>
+        </div>
+      ) : null}
       <h1 className="mb-6 font-serif text-3xl font-semibold text-ink">사진 올리기</h1>
 
       <SectionHeader title="사진" meta={`${files.length} / ${MAX_FILES}`} />
