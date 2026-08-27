@@ -102,7 +102,7 @@ export function UploadScreen() {
           <div key={p.url} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: ratio }}>
             {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.url} alt={`선택한 사진 ${i + 1}`} className="h-full w-full object-cover" />
+            <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
             <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
               <X className="h-3.5 w-3.5" strokeWidth={2} />
             </button>
