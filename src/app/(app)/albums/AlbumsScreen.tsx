@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { NoGroupState } from '@/components/NoGroupState';
 import { Button, IconButton } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Spinner } from '@/components/ui/State';
 import { useAlbums, useCreateAlbum, useDeleteAlbum, useFeed, useHasNoGroup, useMembers, useRenameAlbum, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
@@ -91,7 +90,6 @@ export function AlbumsScreen() {
         ) : null}
       </div>
 
-      <SectionHeader title="가족 앨범" meta={albums.data ? `${albums.data.length}개` : undefined} />
       {albums.isPending ? (
         <Spinner />
       ) : (
