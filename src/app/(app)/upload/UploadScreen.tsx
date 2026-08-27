@@ -9,10 +9,11 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAlbumsOf, useHasNoGroup, useMyGroups, useUploadPhotos } from '@/lib/queries';
+import { UPLOAD_MAX_SELECT } from '@/lib/api/photos';
 import { useActiveGroupId } from '@/lib/store/session';
 import { cn } from '@/lib/utils/cn';
 
-const MAX_FILES = 10;
+const MAX_FILES = UPLOAD_MAX_SELECT;
 const RATIOS = [
   { value: 1, label: '정방형 1:1' },
   { value: 0.8, label: '세로 4:5' },
@@ -29,6 +30,7 @@ export function UploadScreen() {
   const upload = useUploadPhotos();
 
   const [files, setFiles] = useState<File[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [ratio, setRatio] = useState<number>(1);
   const [caption, setCaption] = useState('');
   // 사용자가 손대기 전(null)에는 활성 그룹이 기본 게시 대상
@@ -39,9 +41,11 @@ export function UploadScreen() {
   const previews = useMemo(() => files.map((f) => ({ file: f, url: URL.createObjectURL(f) })), [files]);
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
 
-  const addFiles = (list: FileList | null) => {
+  const addFiles = async (list: FileList | null) => {
     if (!list) return;
-    const next = [...files, ...Array.from(list).filter((f) => f.type.startsWith('image/'))].slice(0, MAX_FILES);
+    const picked = Array.from(list).filter((f) => f.type.startsWith('image/'));
+    const next = [...files, ...picked].slice(0, MAX_FILES);
+    if (files.length + picked.length > MAX_FILES) await dialog.alert('선택 한도', `한 번에 ${MAX_FILES}장까지 올릴 수 있어요. 나눠서 올려주세요.`);
     setFiles(next);
   };
 
@@ -50,12 +54,36 @@ export function UploadScreen() {
 
   const submit = () => {
     if (files.length === 0 || targetGroupIds.length === 0) return;
+    runUpload(files, true);
+  };
+
+  /** 넘긴 파일만 올린다 — 실패분 재시도에도 그대로 쓴다 (문구는 첫 업로드에만) */
+  const runUpload = (targetFiles: File[], withCaption: boolean) => {
     upload.mutate(
-      { files, ratio, caption: caption.trim() || undefined, targets: targetGroupIds.map((groupId) => ({ groupId, albumId: albumByGroup[groupId] || undefined })) },
       {
-        onSuccess: async () => {
-          await dialog.alert('올리기 완료', `사진 ${files.length}장을 올렸어요.`);
-          router.push('/feed');
+        files: targetFiles,
+        ratio,
+        caption: withCaption ? caption.trim() || undefined : undefined,
+        targets: targetGroupIds.map((groupId) => ({ groupId, albumId: albumByGroup[groupId] || undefined })),
+        onProgress: (done, total) => setProgress({ done, total }),
+      },
+      {
+        onSettled: () => setProgress(null),
+        onSuccess: async (result) => {
+          const ok = targetFiles.length - result.failedFiles.length;
+          if (result.failedFiles.length === 0) {
+            await dialog.alert('올리기 완료', `사진 ${ok}장을 올렸어요.`);
+            router.push('/feed');
+            return;
+          }
+          const retry = await dialog.confirm({
+            title: '일부 사진을 올리지 못했어요',
+            message: `${ok}장 성공, ${result.failedFiles.length}장 실패${result.errorMessage ? `\n${result.errorMessage}` : ''}`,
+            confirmText: '실패한 사진 다시 올리기',
+            cancelText: '그만하기',
+          });
+          if (retry) runUpload(result.failedFiles, false);
+          else router.push('/feed');
         },
         onError: alertError('올리기 실패'),
       },
@@ -135,7 +163,7 @@ export function UploadScreen() {
           취소
         </Button>
         <Button variant="solid" size="lg" onClick={submit} disabled={files.length === 0 || targetGroupIds.length === 0 || upload.isPending}>
-          {upload.isPending ? '올리는 중…' : `${files.length}장 올리기`}
+          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : `${files.length}장 올리기`}
         </Button>
       </div>
     </div>

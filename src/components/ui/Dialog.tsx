@@ -17,6 +17,7 @@ interface ConfirmOptions {
   title: string;
   message?: string;
   confirmText?: string;
+  cancelText?: string;
   destructive?: boolean;
 }
 
@@ -157,7 +158,7 @@ function DialogView({ state, close }: { state: DialogState; close: () => void })
           <div className="mt-5 flex justify-end gap-2">
             {state.kind === 'confirm' ? (
               <Button variant="ghost" onClick={dismiss}>
-                취소
+                {state.options.cancelText ?? '취소'}
               </Button>
             ) : null}
             <Button

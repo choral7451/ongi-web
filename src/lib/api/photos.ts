@@ -37,11 +37,26 @@ export interface UploadPayload {
   /** 크롭 비율 (width/height) — 1 정방형, 0.8 세로(4:5) */
   ratio: number;
   targets: UploadTarget[];
+  /** 진행률 콜백 — 완료(성공+실패)된 장수 / 전체 */
+  onProgress?: (done: number, total: number) => void;
 }
 
-/** 사진 올리기 — 브라우저에서 크롭·JPEG 변환 → S3 업로드 → 그룹마다 독립 게시물 생성 */
-export async function uploadPhotos(payload: UploadPayload): Promise<Photo[]> {
-  const prepared = await Promise.all(payload.files.map((file) => prepareImage(file, { ratio: payload.ratio, maxSize: 2048 })));
+export interface UploadResult {
+  photos: Photo[];
+  /** 실패한 파일 — 그대로 다시 넘기면 실패분만 재시도 */
+  failedFiles: File[];
+  errorMessage?: string;
+}
+
+/** 서버는 요청당 파일 10장까지 받는다 (FilesInterceptor 한도) */
+export const UPLOAD_CHUNK_SIZE = 10;
+const UPLOAD_CONCURRENCY = 2;
+/** 한 번에 선택 가능한 최대 장수 */
+export const UPLOAD_MAX_SELECT = 500;
+
+/** 청크 하나 — 변환 → S3 업로드 → 게시. 실패하면 throw */
+async function uploadChunk(files: File[], payload: UploadPayload, withCaption: boolean): Promise<Photo[]> {
+  const prepared = await Promise.all(files.map((file) => prepareImage(file, { ratio: payload.ratio, maxSize: 2048 })));
 
   const form = new FormData();
   prepared.forEach((blob, index) => form.append('photoFiles', blob, `photo-${index + 1}.jpg`));
@@ -49,8 +64,45 @@ export async function uploadPhotos(payload: UploadPayload): Promise<Photo[]> {
 
   const result = await post<{ photos: Photo[] }>('/ongi/photos', {
     photos: uploaded.urls.map((url) => ({ url, aspectRatio: payload.ratio })),
-    caption: payload.caption,
+    caption: withCaption ? payload.caption : undefined,
     targets: payload.targets.map((t) => ({ groupId: t.groupId, albumId: t.albumId, personIds: [] })),
   });
   return result.photos;
+}
+
+/**
+ * 사진 올리기 — 10장씩 청크로 나눠 동시 2개까지 업로드.
+ * 100장 이상도 브라우저 메모리 폭주 없이 올라가고, 청크 하나가 실패해도 나머지는 계속 진행한 뒤 실패분을 돌려준다.
+ */
+export async function uploadPhotos(payload: UploadPayload): Promise<UploadResult> {
+  const chunks: File[][] = [];
+  for (let i = 0; i < payload.files.length; i += UPLOAD_CHUNK_SIZE) chunks.push(payload.files.slice(i, i + UPLOAD_CHUNK_SIZE));
+
+  const total = payload.files.length;
+  let done = 0;
+  const photos: Photo[] = [];
+  const failedFiles: File[] = [];
+  let errorMessage: string | undefined;
+  payload.onProgress?.(0, total);
+
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < chunks.length) {
+      const index = cursor++;
+      const files = chunks[index];
+      try {
+        // 문구는 첫 사진에만 붙는다 — 첫 청크에서만 전달
+        photos.push(...(await uploadChunk(files, payload, index === 0)));
+      } catch (e) {
+        failedFiles.push(...files);
+        errorMessage = e instanceof Error ? e.message : '잠시 후 다시 시도해 주세요.';
+      } finally {
+        done += files.length;
+        payload.onProgress?.(done, total);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, chunks.length) }, worker));
+
+  return { photos, failedFiles, errorMessage };
 }
