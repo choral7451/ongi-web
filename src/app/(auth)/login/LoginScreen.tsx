@@ -31,7 +31,9 @@ export function LoginScreen() {
 
   const finish = async (user: { id: string; name: string; provider: string }) => {
     setUser(user);
-    router.replace(params.get('next') || '/feed');
+    // 로그인 후 첫 화면은 항상 홈. 초대 링크(/groups?code=…)로 들어온 경우만 그쪽으로 복귀
+    const next = params.get('next');
+    router.replace(next && next.startsWith('/groups') && next.includes('code=') ? next : '/feed');
     if (user.name === DEFAULT_USER_NAME) {
       const name = await dialog.prompt({ title: '가족에게 보여질 이름', message: "이름은 언제든 '나' 페이지에서 바꿀 수 있어요.", confirmText: '저장' });
       if (name?.trim()) profileApi.updateMyName(name.trim()).then((me) => setCurrentUserName(me.name)).catch(() => {});
