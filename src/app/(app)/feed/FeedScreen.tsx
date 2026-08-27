@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { FeedPost } from '@/components/feed/FeedPost';
 import { NoGroupState } from '@/components/NoGroupState';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/State';
 import { useAlbums, useFeed, useHasNoGroup, useMembers } from '@/lib/queries';
 import { dayKey, feedSectionTitle, formatFeedDate } from '@/lib/utils/format';
@@ -44,8 +43,7 @@ export function FeedScreen() {
         <EmptyState>아직 올라온 사진이 없어요. 첫 사진을 올려보세요.</EmptyState>
       ) : (
         sections.map((section) => (
-          <section key={section.key} className="mb-8">
-            <SectionHeader title={section.title} meta={section.meta} />
+          <section key={section.key} className="mb-6">
             <div className="flex flex-col gap-6">
               {section.photos.map((photo) => (
                 <FeedPost
