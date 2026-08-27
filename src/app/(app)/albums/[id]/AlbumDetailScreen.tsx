@@ -1,12 +1,14 @@
 'use client';
 
-import { ChevronLeft, FolderInput, Trash2 } from 'lucide-react';
+import { ChevronLeft, FolderInput, Send, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import * as albumsApi from '@/lib/api/albums';
 import Link from 'next/link';
 import { useState } from 'react';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
-import { useAlbumPhotos, useAlbums, useDeletePhotos, useFeed, useMembers, useMovePhotos, useUnfiledPhotos } from '@/lib/queries';
+import { queryKeys, useAlbumPhotos, useAlbums, useCopyPhotos, useDeletePhotos, useFeed, useMembers, useMovePhotos, useMyGroups, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
 import type { Photo } from '@/types';
 
@@ -32,6 +34,10 @@ export function AlbumDetailScreen({ id }: { id: string }) {
   const canDelete = (photo: Photo) => !!me && (me.role === 'admin' || photo.authorId === me.id);
   const deletePhotos = useDeletePhotos();
   const movePhotos = useMovePhotos();
+  const copyPhotos = useCopyPhotos();
+  const myGroups = useMyGroups();
+  const qc = useQueryClient();
+  const otherGroups = (myGroups.data ?? []).filter((g) => g.id !== groupId);
   const [selecting, setSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deletable = (query.data ?? []).filter(canDelete);
@@ -66,6 +72,31 @@ export function AlbumDetailScreen({ id }: { id: string }) {
       ...(isUnfiled ? [] : [{ label: '앨범 없음 (미분류)', onPress: () => move(null) }]),
       ...targets.map((a) => ({ label: a.title, onPress: () => move(a.id) })),
     ]);
+  };
+
+  /** 다른 가족 공간에 공유 — 대상 공간 → 그 공간의 앨범 순으로 고른 뒤 복사 */
+  const pickGroupAndCopy = async () => {
+    const count = selectedIds.size;
+    if (count === 0 || otherGroups.length === 0) return;
+    const copy = (targetGroupId: string, albumId: string | null) =>
+      copyPhotos.mutate(
+        { photoIds: [...selectedIds], targetGroupId, albumId },
+        {
+          onSuccess: ({ copiedIds, skippedIds }) => {
+            exitSelect();
+            dialog.alert('공유 완료', `${copiedIds.length}장을 공유했어요.${skippedIds.length > 0 ? ` ${skippedIds.length}장은 권한이 없어 건너뛰었어요.` : ''}`);
+          },
+          onError: alertError('공유 실패'),
+        },
+      );
+    const pickAlbum = async (targetGroupId: string, groupName: string) => {
+      const albums = await qc.fetchQuery({ queryKey: queryKeys.albums(targetGroupId), queryFn: () => albumsApi.getAlbums(targetGroupId) }).catch(() => []);
+      await dialog.actions(`「${groupName}」의 앨범`, [
+        { label: '앨범 없음 (미분류)', onPress: () => copy(targetGroupId, null) },
+        ...albums.map((a) => ({ label: a.title, onPress: () => copy(targetGroupId, a.id) })),
+      ]);
+    };
+    await dialog.actions(`${count}장을 공유할 가족 공간`, otherGroups.map((g) => ({ label: g.name, onPress: () => void pickAlbum(g.id, g.name) })));
   };
 
   const confirmDelete = async () => {
@@ -118,6 +149,11 @@ export function AlbumDetailScreen({ id }: { id: string }) {
             <Button variant="secondary" onClick={() => setSelectedIds(selectedIds.size === deletable.length ? new Set() : new Set(deletable.map((p) => p.id)))}>
               {selectedIds.size === deletable.length ? '선택 해제' : '모두 선택'}
             </Button>
+            {otherGroups.length > 0 ? (
+              <Button onClick={pickGroupAndCopy} disabled={selectedIds.size === 0 || copyPhotos.isPending} icon={<Send className="h-4 w-4" strokeWidth={1.75} />}>
+                {copyPhotos.isPending ? '공유 중…' : '다른 공간에 공유'}
+              </Button>
+            ) : null}
             <Button onClick={pickAlbumAndMove} disabled={selectedIds.size === 0 || movePhotos.isPending} icon={<FolderInput className="h-4 w-4" strokeWidth={1.75} />}>
               {movePhotos.isPending ? '이동 중…' : '앨범 이동'}
             </Button>
