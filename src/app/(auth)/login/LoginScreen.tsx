@@ -51,8 +51,9 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 py-10">
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 pt-10 pb-14">
+      {/* 브랜드 블록은 정중앙보다 위쪽에 — 모바일에서 화면 전체가 위로 올라간 인상 */}
+      <div className="flex flex-1 flex-col items-center justify-center pb-24 text-center">
         <p className="mb-3 text-[11px] tracking-[0.15em] text-accent">우리 가족의 오늘을 담는 곳</p>
         <h1 className="font-serif text-6xl font-semibold tracking-[0.15em] text-ink">ONGI</h1>
         <div className="my-4 h-px w-14 bg-accent-300" />
