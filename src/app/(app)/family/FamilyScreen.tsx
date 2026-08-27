@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/State';
 import { Tag } from '@/components/ui/Tag';
-import { useBlockMember, useFamily, useHasNoGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
+import { useRouter } from 'next/navigation';
+import { useBlockMember, useFamily, useHasNoGroup, useLeaveGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
+import { useActiveGroupId } from '@/lib/store/session';
 import { buildInviteMessage } from '@/lib/utils/invite';
 import type { Member } from '@/types';
 
@@ -28,10 +30,30 @@ export function FamilyScreen() {
   const block = useBlockMember();
   const unblock = useUnblockMember();
   const remove = useRemoveMember();
+  const router = useRouter();
+  const activeGroupId = useActiveGroupId();
+
   const report = useReport();
 
   const inviteCode = family.data?.inviteCode ?? '';
   const me = members.data?.find((m) => m.isMe);
+  const leave = useLeaveGroup();
+  const isSoleAdmin = me?.role === 'admin' && !members.data?.some((m) => m.id !== me.id && m.role === 'admin');
+  const othersCount = (members.data?.length ?? 1) - 1;
+  const confirmLeave = async () => {
+    const ok = await dialog.confirm({
+      title: '가족 공간 나가기',
+      message:
+        othersCount === 0
+          ? '마지막 구성원이라 나가면 이 가족 공간도 사라져요. 올린 사진은 함께 삭제됩니다.'
+          : isSoleAdmin
+            ? '나가면 가장 먼저 참여한 구성원이 관리자가 돼요. 올린 사진과 댓글은 공간에 남습니다.'
+            : '올린 사진과 댓글은 공간에 남고, 다시 참여하려면 새 초대 코드가 필요해요.',
+      confirmText: '나가기',
+      destructive: true,
+    });
+    if (ok) leave.mutate(activeGroupId, { onSuccess: () => router.push('/feed'), onError: alertError('나가기 실패') });
+  };
 
   const openMemberActions = (member: Member) =>
     dialog.actions(member.name, [
@@ -157,6 +179,12 @@ export function FamilyScreen() {
             </div>
           </aside>
         ) : null}
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="text-[13px] text-danger underline underline-offset-2 hover:opacity-80 disabled:opacity-50">
+          {leave.isPending ? '나가는 중…' : '가족 공간 나가기'}
+        </button>
       </div>
     </div>
   );
