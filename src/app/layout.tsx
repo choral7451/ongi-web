@@ -29,6 +29,8 @@ export const viewport: Viewport = {
   // iOS Safari 가 16px 미만 입력창 포커스 시 자동 확대하는 것을 막음 (핀치 줌도 함께 비활성)
   maximumScale: 1,
   userScalable: false,
+  // 홈 화면에 추가한 PWA 등에서 상단 노치 영역까지 쓰고 safe-area 로 패딩
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

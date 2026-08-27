@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-divider px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-divider bg-bg px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
           <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.2em] text-ink" aria-label="홈으로">
             ONGI
           </Link>
