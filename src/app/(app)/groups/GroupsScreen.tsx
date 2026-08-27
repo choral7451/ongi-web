@@ -78,7 +78,7 @@ export function GroupsScreen() {
           }}
         >
           <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="예: 김씨네 온기" autoFocus={tab === 'create'} aria-label="공간 이름" />
-          <Button type="submit" disabled={newName.trim().length === 0 || createGroup.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
+          <Button type="submit" className="w-28" disabled={newName.trim().length === 0 || createGroup.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
             {createGroup.isPending ? '만드는 중…' : '만들기'}
           </Button>
         </form>
@@ -96,7 +96,7 @@ export function GroupsScreen() {
           }}
         >
           <Input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder="예: ONGI-1234" autoFocus={tab === 'join'} aria-label="초대 코드" />
-          <Button type="submit" disabled={inviteCode.trim().length === 0 || joinGroup.isPending} icon={<Ticket className="h-4 w-4" strokeWidth={1.75} />}>
+          <Button type="submit" className="w-28" disabled={inviteCode.trim().length === 0 || joinGroup.isPending} icon={<Ticket className="h-4 w-4" strokeWidth={1.75} />}>
             {joinGroup.isPending ? '확인 중…' : '참여하기'}
           </Button>
         </form>
