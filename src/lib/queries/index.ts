@@ -170,6 +170,27 @@ export function useToggleLike() {
   });
 }
 
+/** 사진 일괄 삭제 — 삭제된 것만 캐시에서 제거하고 앨범/그룹 카운트를 갱신 */
+export function useDeletePhotos() {
+  const qc = useQueryClient();
+  const groupId = useActiveGroupId();
+  return useMutation({
+    mutationFn: photosApi.deletePhotos,
+    onSuccess: ({ deletedIds }) => {
+      const deleted = new Set(deletedIds);
+      for (const id of deleted) qc.removeQueries({ queryKey: queryKeys.photo(id) });
+      qc.setQueriesData<Photo[]>(
+        { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
+        (old) => old?.filter((p) => !deleted.has(p.id)),
+      );
+      qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
+      qc.invalidateQueries({ queryKey: queryKeys.group(groupId) });
+      qc.invalidateQueries({ queryKey: queryKeys.members(groupId) });
+      qc.invalidateQueries({ queryKey: queryKeys.profileStats });
+    },
+  });
+}
+
 export function useDeletePhoto() {
   const qc = useQueryClient();
   const groupId = useActiveGroupId();
