@@ -95,7 +95,7 @@ export function AlbumDetailScreen({ id }: { id: string }) {
           <Button variant="ghost" onClick={exitSelect}>
             취소
           </Button>
-        ) : deletable.length > 0 ? (
+        ) : !isAll && deletable.length > 0 ? (
           <Button onClick={() => setSelecting(true)}>선택</Button>
         ) : null}
       </div>
