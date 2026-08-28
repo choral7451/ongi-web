@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
+import { Fredoka, Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
 import { AppProviders } from '@/components/providers/AppProviders';
 import './globals.css';
 
@@ -9,6 +9,8 @@ const notoSans = Noto_Sans_KR({
   weight: ['400', '500', '600'],
   display: 'swap',
 });
+
+const fredoka = Fredoka({ variable: '--font-logo', subsets: ['latin'], weight: ['700'], display: 'swap' });
 
 const notoSerif = Noto_Serif_KR({
   variable: '--font-noto-serif',
@@ -36,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="ko" className={`${notoSans.variable} ${notoSerif.variable} h-full`}>
+    <html lang="ko" className={`${notoSans.variable} ${notoSerif.variable} ${fredoka.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         <AppProviders>{children}</AppProviders>
       </body>
