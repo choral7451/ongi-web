@@ -16,7 +16,7 @@ export default function LandingPage() {
     <div className="flex min-h-screen flex-col">
       <LandingRedirect />
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
-        <span className="font-serif text-xl font-semibold tracking-[0.2em] text-ink">ONGI</span>
+        <span className="inline-block origin-left scale-x-[1.15] text-2xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]">ONGI</span>
         <nav className="flex items-center gap-5 text-sm text-neutral-700" aria-label="상단 메뉴">
           <a href="#features" className="hidden hover:text-ink sm:inline">
             소개

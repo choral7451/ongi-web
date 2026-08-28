@@ -111,7 +111,7 @@ function GroupSwitcher({ compact = false }: { compact?: boolean }) {
         {active?.name ?? '우리 가족의 오늘'}
         <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
       </Link>
-      <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.15em] text-ink" aria-label="홈으로">
+      <Link href="/feed" className="inline-block origin-left scale-x-[1.15] text-3xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]" aria-label="홈으로">
         ONGI
       </Link>
     </div>

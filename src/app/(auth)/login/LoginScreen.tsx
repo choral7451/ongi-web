@@ -57,7 +57,7 @@ export function LoginScreen() {
       {/* 바닥에 고정하지 않고 위에서부터 쌓는다 — 모바일 브라우저 주소창 때문에 100vh 가 실제 화면보다 커서 버튼이 스크롤 아래로 밀리던 문제 */}
       <div className="mb-10 flex flex-col items-center text-center md:mb-12">
         <p className="mb-3 text-[11px] tracking-[0.15em] text-accent">우리 가족의 오늘을 담는 곳</p>
-        <h1 className="font-serif text-6xl font-semibold tracking-[0.15em] text-ink">ONGI</h1>
+        <h1 className="inline-block scale-x-[1.15] text-6xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]">ONGI</h1>
         <div className="my-4 h-px w-14 bg-accent-300" />
         <p className="text-sm leading-6 text-muted">
           흩어져 있는 가족의 하루를
