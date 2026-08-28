@@ -84,7 +84,8 @@ export function PhotoDetailScreen({ id }: { id: string }) {
     addComment.mutate(text, {
       onSuccess: () => {
         setDraft('');
-        // 방금 쓴 댓글이 목록 맨 아래에 붙으므로 그쪽으로 스크롤
+        // 모바일 키보드를 내리고, 방금 쓴 댓글(목록 맨 아래)로 스크롤
+        (document.activeElement as HTMLElement | null)?.blur?.();
         setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
       },
       onError: alertError('댓글 등록 실패'),
