@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Heart, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePhotoActions, REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -45,6 +45,10 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const report = useReport();
   const [draft, setDraft] = useState('');
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  // 상세에 들어올 때 입력창 포커스가 남아 모바일 키보드가 올라오지 않도록
+  useEffect(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+  }, [id]);
 
   const me = members.data?.find((m) => m.isMe);
   const author = members.data?.find((m) => m.id === photo.data?.authorId);
