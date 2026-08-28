@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Heart, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePhotoActions, REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -44,6 +44,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const deleteComment = useDeleteComment(id);
   const report = useReport();
   const [draft, setDraft] = useState('');
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const me = members.data?.find((m) => m.isMe);
   const author = members.data?.find((m) => m.id === photo.data?.authorId);
@@ -80,7 +81,14 @@ export function PhotoDetailScreen({ id }: { id: string }) {
     e.preventDefault();
     const text = draft.trim();
     if (!text) return;
-    addComment.mutate(text, { onSuccess: () => setDraft(''), onError: alertError('댓글 등록 실패') });
+    addComment.mutate(text, {
+      onSuccess: () => {
+        setDraft('');
+        // 방금 쓴 댓글이 목록 맨 아래에 붙으므로 그쪽으로 스크롤
+        setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+      },
+      onError: alertError('댓글 등록 실패'),
+    });
   };
 
   const navTo = (photoId: string) => router.replace(`/photos/${photoId}?ctx=${encodeURIComponent(ctx)}`);
@@ -183,6 +191,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
               );
             })}
           </ul>
+          <div ref={commentsEndRef} />
 
           {/* 모바일: 하단 탭바(높이 + safe-area) 바로 위에 고정 / 데스크톱: 화면 맨 아래 */}
           <form

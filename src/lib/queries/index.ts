@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { albumsApi, familyApi, groupsApi, photosApi, profileApi, reportsApi } from '@/lib/api';
 import type { UploadPayload } from '@/lib/api/photos';
 import { useActiveGroupId, useSession } from '@/lib/store/session';
-import type { Photo } from '@/types';
+import type { Comment, Photo } from '@/types';
 
 /** 그룹 스코프 데이터는 키에 groupId 가 들어간다 — 그룹 전환 시 캐시가 자동으로 바뀐다 */
 export const queryKeys = {
@@ -272,7 +272,9 @@ export function useAddComment(photoId: string) {
   const invalidateLists = useInvalidatePhotoLists();
   return useMutation({
     mutationFn: (text: string) => photosApi.addComment({ photoId, text }),
-    onSuccess: () => {
+    onSuccess: (comment) => {
+      // 리페치를 기다리지 않고 바로 목록에 붙여 방금 쓴 댓글이 즉시 보이게
+      qc.setQueryData<Comment[]>(queryKeys.comments(photoId), (old) => (old && !old.some((c) => c.id === comment.id) ? [...old, comment] : old));
       qc.invalidateQueries({ queryKey: queryKeys.comments(photoId) });
       qc.invalidateQueries({ queryKey: queryKeys.photo(photoId) });
       invalidateLists();
