@@ -55,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-divider bg-bg px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
-          <Link href="/feed" className="font-serif text-3xl font-semibold tracking-[0.2em] text-ink" aria-label="홈으로">
+          <Link href="/feed" className="inline-block origin-left scale-x-125 font-serif text-2xl leading-none font-semibold tracking-[0.3em] text-ink" aria-label="홈으로">
             ONGI
           </Link>
           <GroupSwitcher compact />
