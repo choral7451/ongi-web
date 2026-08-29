@@ -63,6 +63,12 @@ export const useSession = create<SessionState>((set) => ({
   },
   signOut: () => {
     signOutApi();
+    // 저장된 활성 그룹은 이 계정 것 — 다음 계정에 복원되지 않도록 제거
+    try {
+      window.localStorage.removeItem(ACTIVE_GROUP_KEY);
+    } catch {
+      // 무시
+    }
     set({ isAuthenticated: false, currentUserId: '', currentUserName: '', activeGroupId: '' });
   },
 }));
