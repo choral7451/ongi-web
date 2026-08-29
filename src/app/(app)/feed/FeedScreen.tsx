@@ -43,8 +43,8 @@ export function FeedScreen() {
         <EmptyState>아직 올라온 사진이 없어요. 첫 사진을 올려보세요.</EmptyState>
       ) : (
         sections.map((section) => (
-          <section key={section.key} className="mb-6">
-            <div className="flex flex-col gap-6">
+          <section key={section.key} className="mb-[22px]">
+            <div className="flex flex-col gap-[22px]">
               {section.photos.map((photo) => (
                 <FeedPost
                   key={photo.id}

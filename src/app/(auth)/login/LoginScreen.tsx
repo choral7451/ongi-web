@@ -53,13 +53,13 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center px-6 pt-[14vh] pb-10 md:justify-center md:pt-10">
+    <div className="flex min-h-dvh flex-col items-center px-7 pt-[14vh] pb-10 md:justify-center md:pt-10">
       {/* 바닥에 고정하지 않고 위에서부터 쌓는다 — 모바일 브라우저 주소창 때문에 100vh 가 실제 화면보다 커서 버튼이 스크롤 아래로 밀리던 문제 */}
       <div className="mb-10 flex flex-col items-center text-center md:mb-12">
-        <p className="mb-3 text-[11px] tracking-[0.15em] text-accent">우리 가족의 오늘을 담는 곳</p>
-        <h1 className="inline-block scale-x-[1.15] text-6xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]">ONGI</h1>
+        <p className="mb-2.5 text-[11px] tracking-[1.4px] text-accent">우리 가족의 오늘을 담는 곳</p>
+        <h1 className="inline-block scale-x-[1.15] text-6xl leading-[70px] font-bold tracking-[4px] text-ink [font-family:var(--font-logo),sans-serif]">ONGI</h1>
         <div className="my-4 h-px w-14 bg-accent-300" />
-        <p className="text-sm leading-6 text-muted">
+        <p className="text-sm leading-[23px] text-muted">
           흩어져 있는 가족의 하루를
           <br />한 곳에 모아 함께 봐요
         </p>
@@ -70,9 +70,11 @@ export function LoginScreen() {
           type="button"
           disabled={pending}
           onClick={() => start(signInWithGoogle)}
-          className="flex h-13 items-center justify-center gap-3 rounded-lg border border-divider bg-white text-[15px] font-semibold text-[#1f1f1f] transition-opacity hover:bg-neutral-100 disabled:opacity-60"
+          className="relative flex h-13 items-center justify-center rounded-lg border border-divider bg-white text-[15px] font-semibold text-[#1f1f1f] transition-opacity hover:bg-neutral-100 disabled:opacity-60"
         >
-          <GoogleLogo />
+          <span className="absolute left-[18px] flex w-[22px] justify-center">
+            <GoogleLogo />
+          </span>
           {pending ? '연결 중…' : 'Google로 시작하기'}
         </button>
         {DEV_LOGIN_ENABLED ? (
@@ -80,7 +82,7 @@ export function LoginScreen() {
             개발용 로그인 (토큰 없음)
           </button>
         ) : null}
-        <p className="mt-2 text-center text-[11px] leading-5 text-muted">
+        <p className="mt-3 text-center text-[11px] leading-[17px] text-muted">
           시작하면 온기의{' '}
           <Link href="/legal/terms" className="text-accent-700 underline">
             이용약관

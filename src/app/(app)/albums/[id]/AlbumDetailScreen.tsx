@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as albumsApi from '@/lib/api/albums';
 import Link from 'next/link';
 import { useState } from 'react';
+import Image from 'next/image';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
@@ -23,8 +24,10 @@ export function AlbumDetailScreen({ id }: { id: string }) {
   const albums = useAlbums();
 
   const query = isAll ? feed : isUnfiled ? unfiled : albumPhotos;
-  const title = isAll ? '전체 사진' : isUnfiled ? '미분류' : (albums.data?.find((a) => a.id === id)?.title ?? '앨범');
+  const album = isAll || isUnfiled ? undefined : albums.data?.find((a) => a.id === id);
+  const title = isAll ? '전체 사진' : isUnfiled ? '미분류' : (album?.title ?? '앨범');
   const ctx = isAll ? 'all' : isUnfiled ? 'unfiled' : `album:${id}`;
+  const coverUrl = isAll || isUnfiled ? query.data?.[0]?.url : album?.coverUrl;
 
   // 선택 모드 — 작성자 본인 또는 관리자인 사진만 골라서 한 번에 삭제
   const dialog = useDialog();
@@ -115,20 +118,33 @@ export function AlbumDetailScreen({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-5 flex items-center gap-2">
-        <Link href="/albums" aria-label="앨범 목록으로" className="rounded-md p-1.5 hover:bg-neutral-100">
-          <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <Link href="/albums" aria-label="앨범 목록으로" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
+          <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>
-        <h1 className="font-serif text-2xl font-semibold text-ink">{title}</h1>
-        {query.data ? <span className="text-xs tabular-nums text-muted">{query.data.length}장</span> : null}
-        <span className="flex-1" />
+        <p className="font-serif text-base font-semibold text-ink">{selecting ? `${selectedIds.size}장 선택` : '앨범'}</p>
         {selecting ? (
-          <Button variant="ghost" onClick={exitSelect}>
-            취소
-          </Button>
+          <Button onClick={exitSelect}>취소</Button>
         ) : !isAll && (query.data?.length ?? 0) > 0 ? (
           <Button onClick={() => setSelecting(true)}>선택</Button>
+        ) : (
+          <span className="w-9" />
+        )}
+      </div>
+      <div className="mb-3.5">
+        {coverUrl ? (
+          <div className="relative h-[180px] overflow-hidden bg-accent-100 md:hidden">
+            <Image src={coverUrl} alt="" fill sizes="100vw" className="object-cover" />
+          </div>
         ) : null}
+        <div className="mt-3.5 flex items-baseline justify-between gap-3">
+          <h1 className="font-serif text-2xl leading-8 font-semibold text-ink">{title}</h1>
+          <span className="text-[11px] tabular-nums text-muted">
+            {query.data ? `${query.data.length}장` : ''}
+            {album ? ` · ${album.meta}` : ''}
+          </span>
+        </div>
+        <div className="mt-2.5 h-px bg-accent-300" />
       </div>
       <PhotoGrid
         photos={query.data}
@@ -143,21 +159,20 @@ export function AlbumDetailScreen({ id }: { id: string }) {
         canSelect={canDelete}
       />
       {selecting ? (
-        <div className="sticky bottom-[calc(3.875rem+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-between gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0">
-          <span className="text-sm tabular-nums text-ink">{selectedIds.size}장 선택</span>
+        <div className="sticky bottom-[calc(74px+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-divider bg-bg py-3 md:bottom-0">
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => setSelectedIds(selectedIds.size === deletable.length ? new Set() : new Set(deletable.map((p) => p.id)))}>
+            <Button onClick={() => setSelectedIds(selectedIds.size === deletable.length ? new Set() : new Set(deletable.map((p) => p.id)))}>
               {selectedIds.size === deletable.length ? '선택 해제' : '모두 선택'}
             </Button>
             {otherGroups.length > 0 ? (
-              <Button onClick={pickGroupAndCopy} disabled={selectedIds.size === 0 || copyPhotos.isPending} icon={<Send className="h-4 w-4" strokeWidth={1.75} />}>
+              <Button onClick={pickGroupAndCopy} disabled={selectedIds.size === 0 || copyPhotos.isPending} icon={<Send className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
                 {copyPhotos.isPending ? '공유 중…' : '다른 공간에 공유'}
               </Button>
             ) : null}
-            <Button onClick={pickAlbumAndMove} disabled={selectedIds.size === 0 || movePhotos.isPending} icon={<FolderInput className="h-4 w-4" strokeWidth={1.75} />}>
+            <Button onClick={pickAlbumAndMove} disabled={selectedIds.size === 0 || movePhotos.isPending} icon={<FolderInput className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
               {movePhotos.isPending ? '이동 중…' : '앨범 이동'}
             </Button>
-            <Button variant="danger" onClick={confirmDelete} disabled={selectedIds.size === 0 || deletePhotos.isPending} icon={<Trash2 className="h-4 w-4" strokeWidth={1.75} />}>
+            <Button variant="danger" onClick={confirmDelete} disabled={selectedIds.size === 0 || deletePhotos.isPending} icon={<Trash2 className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
               {deletePhotos.isPending ? '삭제 중…' : `${selectedIds.size}장 삭제`}
             </Button>
           </div>

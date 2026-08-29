@@ -110,9 +110,9 @@ export function PhotoDetailScreen({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-4 flex items-center justify-between">
-        <Link href={backHref} aria-label="뒤로" className="rounded-md p-1.5 hover:bg-neutral-100">
-          <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
+      <div className="mb-2.5 flex items-center justify-between">
+        <Link href={backHref} aria-label="뒤로" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
+          <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>
         <div className="text-center">
           <p className="font-serif text-base font-semibold text-ink">{album?.title ?? '사진'}</p>
@@ -133,7 +133,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
         <ErrorState message="사진을 불러오지 못했어요." onRetry={() => photo.refetch()} />
       ) : (
         <>
-          <div className="relative overflow-hidden rounded-md bg-neutral-200 transition-[aspect-ratio] duration-200" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
+          <div className="relative overflow-hidden bg-accent-100 transition-[aspect-ratio] duration-200" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
             {shown && shown.url !== photo.data.url && !incomingLoaded ? (
               <Image src={shown.url} alt="" aria-hidden fill sizes="(min-width: 768px) 768px, 100vw" className="object-contain" />
             ) : null}
@@ -168,7 +168,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
                 {photo.data.location ? ` · ${photo.data.location}` : ''}
               </p>
             </div>
-            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-[13px] text-accent-700 hover:bg-accent-100">
+            <button type="button" onClick={() => toggleLike.mutate(photo.data!.id)} aria-pressed={photo.data.likedByMe} aria-label="따뜻해요" className="flex shrink-0 items-center gap-[5px] rounded-md py-1 pl-1.5 text-[13px] text-accent-700">
               <Heart className="h-5 w-5" strokeWidth={1.75} fill={photo.data.likedByMe ? 'currentColor' : 'transparent'} />
               <span className="tabular-nums">{photo.data.likeCount}</span>
             </button>
@@ -201,7 +201,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
           {/* 모바일: 하단 탭바(높이 + safe-area) 바로 위에 고정 / 데스크톱: 화면 맨 아래 */}
           <form
             onSubmit={send}
-            className="sticky bottom-[calc(3.875rem+env(safe-area-inset-bottom))] flex items-center gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0"
+            className="sticky bottom-[calc(74px+env(safe-area-inset-bottom))] flex items-center gap-2.5 border-t border-divider bg-bg py-3 md:bottom-0"
           >
             <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="따뜻한 한마디를 남겨보세요" aria-label="댓글" className="min-w-0 flex-1" />
             <Button type="submit" disabled={draft.trim().length === 0 || addComment.isPending} className="shrink-0 whitespace-nowrap">

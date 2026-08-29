@@ -63,11 +63,11 @@ export function ProfileScreen() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <div className="flex flex-col items-center gap-2.5 py-6">
+      <div className="flex flex-col items-center gap-2.5 pt-6 pb-5">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="프로필 이미지 변경">
-          <Avatar name={name || '?'} src={me.data?.avatarUrl} size={92} />
-          <span className="absolute right-0 bottom-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-bg bg-accent text-white">
-            <Camera className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Avatar name={name || '?'} src={me.data?.avatarUrl} size={92} className="border-0 text-[34px] text-accent-700" />
+          <span className="absolute right-0 bottom-0.5 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-bg bg-accent text-white">
+            <Camera className="h-[13px] w-[13px]" strokeWidth={1.75} />
           </span>
         </button>
         <input
@@ -81,7 +81,7 @@ export function ProfileScreen() {
             e.target.value = '';
           }}
         />
-        <button type="button" onClick={rename} className="flex items-center gap-1.5 font-serif text-2xl font-semibold text-ink" aria-label="이름 변경">
+        <button type="button" onClick={rename} className="flex items-center gap-1.5 font-serif text-[26px] leading-8 font-semibold text-ink" aria-label="이름 변경">
           {updateMyName.isPending ? '변경 중…' : uploadAvatar.isPending ? '이미지 올리는 중…' : name}
           <Pencil className="h-3.5 w-3.5 text-neutral-500" strokeWidth={1.75} />
         </button>
@@ -92,9 +92,9 @@ export function ProfileScreen() {
             ['앨범', stats.data?.albumCount],
             ['가족', stats.data?.familyCount],
           ].map(([label, value]) => (
-            <div key={label as string} className="px-5 text-center">
-              <dd className="font-serif text-xl font-semibold tabular-nums text-ink">{value ?? '–'}</dd>
-              <dt className="text-[10.5px] tracking-wide text-muted">{label}</dt>
+            <div key={label as string} className="px-[18px] text-center">
+              <dd className="font-serif text-[22px] leading-7 font-semibold tabular-nums text-ink">{value ?? '–'}</dd>
+              <dt className="text-[10.5px] tracking-[0.6px] text-muted">{label}</dt>
             </div>
           ))}
         </dl>
@@ -119,7 +119,7 @@ export function ProfileScreen() {
       <button type="button" onClick={onDeleteAccount} disabled={deleteAccount.isPending} className="block w-full py-3.5 text-left text-sm text-danger hover:bg-neutral-100">
         {deleteAccount.isPending ? '탈퇴 처리 중…' : '회원탈퇴'}
       </button>
-      <p className="text-[11px] text-muted">탈퇴하면 올린 사진과 댓글이 모두 삭제되며 복구할 수 없어요.</p>
+      <p className="-mt-1.5 mb-2 text-[11px] text-muted">탈퇴하면 올린 사진과 댓글이 모두 삭제되며 복구할 수 없어요.</p>
     </div>
   );
 }

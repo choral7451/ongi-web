@@ -20,6 +20,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useActiveGroupSync();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // 앱은 홈 탭에서만 ONGI 로고 + 가족 공간 선택 헤더를 보여준다. 다른 화면은 각자 헤더를 갖는다
+  const showMobileHeader = pathname === '/feed';
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-6xl">
@@ -54,33 +56,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-divider bg-bg px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
-          <Link href="/feed" className="inline-block origin-left scale-x-[1.15] text-[26px] leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]" aria-label="홈으로">
-            ONGI
-          </Link>
-          <GroupSwitcher compact />
-        </header>
-        <main className="flex-1 px-4 pb-24 pt-4 md:px-8 md:pb-10 md:pt-8">{children}</main>
+        {showMobileHeader ? (
+          <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-3.5 md:hidden">
+            <Link
+              href="/feed"
+              className="inline-block origin-left scale-x-[1.15] text-[30px] leading-[34px] font-bold tracking-[3px] text-ink [font-family:var(--font-logo),sans-serif]"
+              aria-label="홈으로"
+            >
+              ONGI
+            </Link>
+            <GroupSwitcher compact />
+          </header>
+        ) : null}
+        <main className={cn('flex-1 px-5 pb-24 md:px-8 md:pt-8 md:pb-10', showMobileHeader ? 'pt-0' : 'pt-[calc(0.625rem+env(safe-area-inset-top))]')}>{children}</main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-divider bg-bg pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="하단 메뉴">
-        {NAV.map(({ href, label, Icon, ...rest }) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isActive(href) ? 'page' : undefined}
-            className={cn('flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px]', isActive(href) ? 'text-accent' : 'text-neutral-600')}
-          >
-            {'primary' in rest ? (
-              <span className="-mt-6 flex h-10 w-10 items-center justify-center rounded-full border border-accent bg-bg text-accent">
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
-              </span>
-            ) : (
-              <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
-            )}
-            {label}
-          </Link>
-        ))}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 flex min-h-[74px] items-center border-t border-divider bg-bg px-2 pb-[env(safe-area-inset-bottom)] md:hidden"
+        aria-label="하단 메뉴"
+      >
+        {NAV.map(({ href, label, Icon, ...rest }) => {
+          const primary = 'primary' in rest;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive(href) ? 'page' : undefined}
+              className={cn('flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10px] tracking-[0.4px]', !primary && isActive(href) ? 'text-accent' : 'text-neutral-600')}
+            >
+              {primary ? (
+                <span className="-mt-[22px] flex h-10 w-10 items-center justify-center rounded-full border border-accent bg-bg text-accent">
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+              ) : (
+                <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
+              )}
+              {label}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
@@ -96,7 +110,7 @@ function GroupSwitcher({ compact = false }: { compact?: boolean }) {
     return (
       <Link
         href="/groups"
-        className="flex max-w-[50%] items-center gap-1 rounded-full border border-divider px-3 py-1.5 text-[13px] text-accent hover:underline"
+        className="flex max-w-[50%] items-center gap-1 rounded-full border border-divider px-3 py-[7px] text-[13px] tracking-[0.3px] text-accent"
         aria-label="가족 공간 전환"
       >
         <span className="truncate">{active?.name ?? '우리 가족의 오늘'}</span>

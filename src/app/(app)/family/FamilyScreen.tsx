@@ -123,7 +123,7 @@ export function FamilyScreen() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="mb-5">
+      <header className="mb-3.5 md:mb-5">
         {family.data ? (
           <p className="text-xs tabular-nums text-muted">
             구성원 {family.data.memberCount}명 · 사진 {family.data.photoCount}장 · {family.data.sinceLabel}
@@ -131,7 +131,7 @@ export function FamilyScreen() {
         ) : null}
       </header>
 
-      <div className="grid gap-8 md:grid-cols-[1fr_320px]">
+      <div className="grid gap-5 md:grid-cols-[1fr_320px] md:gap-8">
         <ul>
           {members.isPending ? (
             <Spinner />
@@ -161,19 +161,19 @@ export function FamilyScreen() {
         </ul>
 
         {inviteCode ? (
-          <aside className="flex h-fit flex-col items-center gap-2.5 rounded-md border border-divider p-5 text-center shadow-sm">
-            <p className="text-[10px] uppercase tracking-[0.15em] text-accent">가족 초대하기</p>
-            <p className="font-serif text-3xl tracking-[0.15em] tabular-nums text-ink">{inviteCode}</p>
+          <aside className="flex h-fit flex-col items-center gap-[9px] rounded-md border border-divider p-[18px] text-center shadow-sm">
+            <p className="text-[10px] uppercase tracking-[1px] text-accent">가족 초대하기</p>
+            <p className="font-serif text-[34px] leading-tight tracking-[2.7px] tabular-nums text-ink">{inviteCode}</p>
             <p className="text-[13px] leading-5 text-ink/80">
               초대 코드는 {family.data?.inviteExpiresInDays ?? 7}일간 유효해요.
               <br />
               가족이 앱이나 웹에서 코드를 입력하면 바로 함께할 수 있어요.
             </p>
-            <div className="mt-1.5 flex gap-2.5">
-              <Button variant="secondary" onClick={copyCode} icon={<Copy className="h-4 w-4" strokeWidth={1.75} />}>
+            <div className="mt-1.5 flex flex-wrap justify-center gap-2.5">
+              <Button variant="secondary" onClick={copyCode} icon={<Copy className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
                 코드 복사
               </Button>
-              <Button onClick={shareCode} icon={<Share2 className="h-4 w-4" strokeWidth={1.75} />}>
+              <Button onClick={shareCode} icon={<Share2 className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
                 초대 코드 공유
               </Button>
             </div>
@@ -181,7 +181,7 @@ export function FamilyScreen() {
         ) : null}
       </div>
 
-      <div className="mt-10 flex justify-center">
+      <div className="mt-7 flex justify-center py-3 md:mt-10">
         <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="text-[13px] text-danger underline underline-offset-2 hover:opacity-80 disabled:opacity-50">
           {leave.isPending ? '나가는 중…' : '가족 공간 나가기'}
         </button>

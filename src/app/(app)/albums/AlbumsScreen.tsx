@@ -23,7 +23,7 @@ function AlbumCard({ href, coverUrl, title, meta, onMenu }: AlbumCardProps) {
   return (
     <li className="relative">
       <Link href={href} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-neutral-200">
+        <div className="relative h-[108px] overflow-hidden bg-accent-100 md:aspect-[4/3] md:h-auto">
           {coverUrl ? <Image src={coverUrl} alt={title} fill sizes="(min-width: 1024px) 240px, 50vw" className="object-cover" /> : null}
         </div>
         <p className="mt-2 font-serif text-base font-semibold text-ink">{title}</p>
@@ -82,9 +82,9 @@ export function AlbumsScreen() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-6 flex items-end justify-end">
+      <div className="mb-3.5 flex min-h-9 items-end justify-end md:mb-6">
         {isAdmin ? (
-          <Button onClick={promptNew} disabled={createAlbum.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
+          <Button onClick={promptNew} disabled={createAlbum.isPending} icon={<Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
             {createAlbum.isPending ? '만드는 중…' : '새 앨범'}
           </Button>
         ) : null}
@@ -93,7 +93,7 @@ export function AlbumsScreen() {
       {albums.isPending ? (
         <Spinner />
       ) : (
-        <ul className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
           {allPhotos.data && allPhotos.data.length > 0 ? (
             <AlbumCard href="/albums/all" coverUrl={allPhotos.data[0].url} title="전체 사진" meta={`${allPhotos.data.length}장 · 이 공간의 모든 사진`} />
           ) : null}

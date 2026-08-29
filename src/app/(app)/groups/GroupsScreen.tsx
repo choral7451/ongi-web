@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Plus, Ticket } from 'lucide-react';
+import { Check, Plus, Ticket, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -34,7 +34,13 @@ export function GroupsScreen() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="mb-6 font-serif text-3xl font-semibold text-ink">가족 공간</h1>
+      <div className="mb-6 flex items-center justify-between md:block">
+        <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100 md:hidden">
+          <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        </button>
+        <h1 className="font-serif text-xl font-semibold text-ink md:text-3xl">가족 공간</h1>
+        <span className="w-9 md:hidden" />
+      </div>
 
       <SectionHeader title="내 공간" meta={groups.data ? `${groups.data.length}개` : undefined} />
       {groups.isPending ? (
@@ -50,7 +56,7 @@ export function GroupsScreen() {
                   onClick={() => switchTo(group.id)}
                   className={cn('flex w-full items-center gap-3 rounded-lg border p-3 text-left', active ? 'border-accent bg-accent-100' : 'border-divider hover:bg-neutral-100')}
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-divider bg-bg font-serif text-lg text-accent-800">{group.name.slice(0, 1)}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-divider bg-bg font-serif text-[17px] font-semibold text-accent-800">{group.name.slice(0, 1)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-ink">{group.name}</span>
                     <span className="block text-[11px] tabular-nums text-muted">
@@ -67,7 +73,7 @@ export function GroupsScreen() {
         <p className="py-6 text-center text-sm text-muted">아직 참여한 가족 공간이 없어요.</p>
       )}
 
-      <div className={cn('mt-8', tab === 'join' && 'order-2')}>
+      <div className={cn('mt-7', tab === 'join' && 'order-2')}>
         <SectionHeader title="새 공간 만들기" size="sm" />
         <form
           className="flex gap-2.5"
@@ -78,14 +84,14 @@ export function GroupsScreen() {
           }}
         >
           <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="예: 김씨네 온기" autoFocus={tab === 'create'} aria-label="공간 이름" />
-          <Button type="submit" className="w-28" disabled={newName.trim().length === 0 || createGroup.isPending} icon={<Plus className="h-4 w-4" strokeWidth={1.75} />}>
+          <Button type="submit" className="w-28" disabled={newName.trim().length === 0 || createGroup.isPending} icon={<Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
             {createGroup.isPending ? '만드는 중…' : '만들기'}
           </Button>
         </form>
         <p className="mt-2 text-[11px] text-muted">공간을 만들면 초대 코드가 발급돼요. 가족 페이지에서 언제든 확인할 수 있어요.</p>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-7">
         <SectionHeader title="초대 코드로 참여" size="sm" />
         <form
           className="flex gap-2.5"
@@ -96,7 +102,7 @@ export function GroupsScreen() {
           }}
         >
           <Input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder="예: ONGI-1234" autoFocus={tab === 'join'} aria-label="초대 코드" />
-          <Button type="submit" className="w-28" disabled={inviteCode.trim().length === 0 || joinGroup.isPending} icon={<Ticket className="h-4 w-4" strokeWidth={1.75} />}>
+          <Button type="submit" className="w-28" disabled={inviteCode.trim().length === 0 || joinGroup.isPending} icon={<Ticket className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
             {joinGroup.isPending ? '확인 중…' : '참여하기'}
           </Button>
         </form>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus, Loader2, X } from 'lucide-react';
+import { Check, ImagePlus, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { NoGroupState } from '@/components/NoGroupState';
@@ -143,79 +143,118 @@ export function UploadScreen() {
           </div>
         </div>
       ) : null}
-      <h1 className="mb-6 font-serif text-3xl font-semibold text-ink">사진 올리기</h1>
 
-      <SectionHeader title="사진" meta={`${files.length} / ${MAX_FILES}`} />
-      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-        {previews.map((p, i) => (
-          <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
-            {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
-            {p.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-            ) : null}
-            <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
-              <X className="h-3.5 w-3.5" strokeWidth={2} />
-            </button>
+      {/* 앱의 모달 헤더 — 닫기 · 제목(중앙 고정) · 올리기 */}
+      <div className="relative mb-4 flex items-center justify-between">
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif text-xl font-semibold text-ink">사진 올리기</span>
+        <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
+          <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        </button>
+        <Button onClick={submit} disabled={files.length === 0 || targetGroupIds.length === 0 || upload.isPending} className="relative">
+          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : '올리기'}
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-[5px]">
+          <p className="text-xs text-ink/70">올릴 공간</p>
+          <div className="flex flex-wrap gap-2">
+            {groups.data?.map((group) => {
+              const checked = targetGroupIds.includes(group.id);
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  aria-pressed={checked}
+                  className={cn('flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs', checked ? 'border-accent bg-accent-100 text-accent-800' : 'border-divider text-neutral-700')}
+                >
+                  {checked ? <Check className="h-[13px] w-[13px] text-accent" strokeWidth={2.2} /> : null}
+                  {group.name}
+                </button>
+              );
+            })}
           </div>
-        ))}
-        {files.length < MAX_FILES ? (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
-            <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
-            사진 선택
-            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+          {targetGroupIds.length > 1 ? <p className="mt-1 text-[11px] text-muted">선택한 공간마다 따로 게시돼요. 좋아요·댓글도 공간별로 분리됩니다.</p> : null}
+        </div>
+
+        {/* 공간 1개든 여러 개든 같은 카드 UI — 공간 이름 + 그 공간의 앨범 칩 */}
+        {targetGroupIds.map((groupId) => {
+          const group = groups.data?.find((g) => g.id === groupId);
+          return (
+            <div key={groupId} className="flex flex-col gap-3.5 rounded-lg border border-divider p-3.5">
+              <div className="flex items-center gap-2.5">
+                <p className="font-serif text-[15px] font-semibold text-ink">{group?.name ?? ''}</p>
+                <span className="h-px flex-1 bg-accent-300" aria-hidden />
+              </div>
+              <AlbumPicker groupId={groupId} value={albumByGroup[groupId] ?? ''} onChange={(albumId) => setAlbumByGroup({ ...albumByGroup, [groupId]: albumId })} />
+            </div>
+          );
+        })}
+
+        <div className="flex flex-col gap-[5px]">
+          <label htmlFor="upload-caption" className="text-xs text-ink/70">
+            설명
           </label>
-        ) : null}
-      </div>
+          <Textarea id="upload-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 이야기를 적어보세요" maxLength={200} className="min-h-9" rows={1} />
+        </div>
 
-
-      <div className="mt-6">
-        <SectionHeader title="한마디" size="sm" />
-        <Textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 순간을 한 줄로 남겨보세요" maxLength={200} />
-      </div>
-
-      <div className="mt-6">
-        <SectionHeader title="게시할 가족 공간" size="sm" />
-        <ul className="flex flex-col gap-2">
-          {groups.data?.map((group) => {
-            const checked = targetGroupIds.includes(group.id);
-            return (
-              <li key={group.id} className={cn('rounded-lg border p-3', checked ? 'border-accent' : 'border-divider')}>
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input type="checkbox" checked={checked} onChange={() => toggleGroup(group.id)} className="h-4 w-4 accent-accent" />
-                  <span className="flex-1 text-sm text-ink">{group.name}</span>
-                </label>
-                {checked ? <AlbumPicker groupId={group.id} value={albumByGroup[group.id] ?? ''} onChange={(albumId) => setAlbumByGroup({ ...albumByGroup, [group.id]: albumId })} /> : null}
-              </li>
-            );
-          })}
-        </ul>
-        <p className="mt-2 text-[11px] text-muted">여러 공간을 고르면 공간마다 독립된 게시물이 생겨요. 좋아요·댓글은 공간별로 따로 쌓여요.</p>
-      </div>
-
-      <div className="mt-8 flex justify-end gap-2.5">
-        <Button variant="ghost" onClick={() => router.back()}>
-          취소
-        </Button>
-        <Button variant="solid" size="lg" onClick={submit} disabled={files.length === 0 || targetGroupIds.length === 0 || upload.isPending}>
-          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : `${files.length}장 올리기`}
-        </Button>
+        <div>
+          <SectionHeader title="사진" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
+          <div className="grid grid-cols-4 gap-1.5">
+            {previews.map((p, i) => (
+              <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
+                {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
+                {p.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                ) : null}
+                <span className="absolute top-[5px] left-[5px] flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-[10px] tabular-nums text-white">{i + 1}</span>
+                <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
+                  <X className="h-3 w-3" strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+            {files.length < MAX_FILES ? (
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
+                <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
+                사진 선택
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+              </label>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
+/** 한 그룹의 앨범 칩 — 앱 GroupTargetFields 와 동일 (선택 시 파란 외곽선) */
 function AlbumPicker({ groupId, value, onChange }: { groupId: string; value: string; onChange: (albumId: string) => void }) {
   const albums = useAlbumsOf(groupId);
-  if (!albums.data || albums.data.length === 0) return null;
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="mt-2 w-full rounded-md border border-divider bg-bg px-2 py-1.5 text-base text-ink md:text-xs" aria-label="앨범 선택">
-      <option value="">앨범 없음 (미분류)</option>
-      {albums.data.map((a) => (
-        <option key={a.id} value={a.id}>
-          {a.title}
-        </option>
-      ))}
-    </select>
+    <div className="flex flex-col gap-[5px]">
+      <p className="text-xs text-ink/70">앨범 (선택)</p>
+      <div className="flex flex-wrap gap-2">
+        {albums.data && albums.data.length > 0 ? (
+          albums.data.map((a) => {
+            const selected = value === a.id;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => onChange(selected ? '' : a.id)}
+                aria-pressed={selected}
+                className={cn('rounded-[3px] px-2.5 text-[11px]', selected ? 'border border-accent py-[2px] text-accent' : 'bg-neutral-200 py-[3px] text-neutral-800')}
+              >
+                {a.title}
+              </button>
+            );
+          })
+        ) : (
+          <p className="text-[11px] text-muted">아직 앨범이 없어요. 미분류로 올라가요.</p>
+        )}
+      </div>
+    </div>
   );
 }
