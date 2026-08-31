@@ -24,7 +24,7 @@ export function FeedPost({ photo, author, album }: FeedPostProps) {
   return (
     <article className="flex flex-col gap-2.5">
       <Link href={href} className="relative block w-full overflow-hidden bg-accent-100" style={{ aspectRatio: photo.aspectRatio || 1 }}>
-        <Image src={photo.url} alt={photo.caption ?? '가족 사진'} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+        <Image src={photo.thumbUrl ?? photo.url} alt={photo.caption ?? '가족 사진'} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
       </Link>
 
       <div className="flex items-center gap-2.5">

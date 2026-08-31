@@ -32,7 +32,7 @@ export function PhotoGrid({ photos, isLoading, isError, onRetry, ctx, emptyMessa
       {photos.map((photo) => {
         const allowed = !selectable || (canSelect?.(photo) ?? true);
         const selected = selectable && (selectedIds?.has(photo.id) ?? false);
-        const img = <Image src={photo.url} alt={photo.caption ?? '사진'} fill sizes="(min-width: 1024px) 200px, 33vw" className={cn('object-cover transition-opacity', !selectable && 'hover:opacity-90', selectable && !allowed && 'opacity-35')} />;
+        const img = <Image src={photo.thumbUrl ?? photo.url} alt={photo.caption ?? '사진'} fill sizes="(min-width: 1024px) 200px, 33vw" className={cn('object-cover transition-opacity', !selectable && 'hover:opacity-90', selectable && !allowed && 'opacity-35')} />;
         return (
           <li key={photo.id} className={cn('relative aspect-square overflow-hidden bg-neutral-200', selected && 'ring-2 ring-accent ring-inset')}>
             {selectable ? (

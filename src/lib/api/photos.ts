@@ -78,10 +78,10 @@ async function uploadChunk(files: File[], payload: UploadPayload, withCaption: b
 
   const form = new FormData();
   prepared.forEach((item, index) => form.append('photoFiles', item.blob, `photo-${index + 1}.jpg`));
-  const uploaded = await postForm<{ urls: string[] }>('/ongi/photos/files', form);
+  const uploaded = await postForm<{ urls: string[]; thumbUrls?: (string | null)[] }>('/ongi/photos/files', form);
 
   const result = await post<{ photos: Photo[] }>('/ongi/photos', {
-    photos: uploaded.urls.map((url, index) => ({ url, aspectRatio: prepared[index].aspectRatio })),
+    photos: uploaded.urls.map((url, index) => ({ url, thumbUrl: uploaded.thumbUrls?.[index] ?? undefined, aspectRatio: prepared[index].aspectRatio })),
     caption: withCaption ? payload.caption : undefined,
     targets: payload.targets.map((t) => ({ groupId: t.groupId, albumId: t.albumId, personIds: [] })),
   });

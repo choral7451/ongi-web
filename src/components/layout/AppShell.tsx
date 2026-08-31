@@ -3,6 +3,7 @@
 import { ChevronDown, Home, Image as ImageIcon, Plus, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useActiveGroupSync, useMyGroups } from '@/lib/queries';
 import { useSession } from '@/lib/store/session';
 import { cn } from '@/lib/utils/cn';
@@ -19,6 +20,9 @@ const NAV = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   useActiveGroupSync();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  // 로고 클릭 → 홈으로 이동하며 피드 새로고침
+  const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['feed'] });
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   // ONGI 로고 + 가족 공간 선택 헤더 — 4개 탭 모두 상단 고정. 상세·모달 화면은 각자 헤더를 갖는다
   const showMobileHeader = ['/feed', '/albums', '/family', '/profile'].includes(pathname);
@@ -60,6 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-3.5 md:hidden">
             <Link
               href="/feed"
+              onClick={refreshFeed}
               className="inline-block origin-left scale-x-[1.15] text-[30px] leading-[34px] font-bold tracking-[3px] text-ink [font-family:var(--font-logo),sans-serif]"
               aria-label="홈으로"
             >
@@ -102,6 +107,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 /** 가족 공간 이름(→ 전환 화면)과 ONGI 로고(→ 홈)는 서로 다른 링크 */
 function GroupSwitcher({ compact = false }: { compact?: boolean }) {
+  const queryClient = useQueryClient();
+  const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['feed'] });
   const groups = useMyGroups();
   const activeGroupId = useSession((s) => s.activeGroupId);
   const active = groups.data?.find((g) => g.id === activeGroupId);
@@ -125,7 +132,7 @@ function GroupSwitcher({ compact = false }: { compact?: boolean }) {
         {active?.name ?? '우리 가족의 오늘'}
         <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
       </Link>
-      <Link href="/feed" className="inline-block origin-left scale-x-[1.15] text-3xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]" aria-label="홈으로">
+      <Link href="/feed" onClick={refreshFeed} className="inline-block origin-left scale-x-[1.15] text-3xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]" aria-label="홈으로">
         ONGI
       </Link>
     </div>
