@@ -68,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <GroupSwitcher compact />
           </header>
         ) : null}
-        <main className={cn('flex-1 px-5 pb-24 md:px-8 md:pt-8 md:pb-10', showMobileHeader ? 'pt-0' : 'pt-[calc(0.625rem+env(safe-area-inset-top))]')}>{children}</main>
+        <main className="flex-1 px-5 pb-24 md:px-8 md:pt-8 md:pb-10">{children}</main>
       </div>
 
       <nav

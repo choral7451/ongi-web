@@ -34,7 +34,7 @@ export function GroupsScreen() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <div className="mb-6 flex items-center justify-between md:block">
+      <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-3.5 flex items-center justify-between md:mb-6 md:block">
         <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100 md:hidden">
           <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>

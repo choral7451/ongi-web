@@ -145,7 +145,7 @@ export function UploadScreen() {
       ) : null}
 
       {/* 앱의 모달 헤더 — 닫기 · 제목(중앙 고정) · 올리기 */}
-      <div className="relative mb-4 flex items-center justify-between">
+      <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 relative mb-4 flex items-center justify-between">
         <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif text-xl font-semibold text-ink">사진 올리기</span>
         <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <X className="h-[18px] w-[18px]" strokeWidth={1.75} />

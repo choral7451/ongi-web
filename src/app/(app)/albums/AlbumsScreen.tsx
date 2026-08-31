@@ -82,7 +82,7 @@ export function AlbumsScreen() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-3.5 flex min-h-9 items-end justify-end md:mb-6">
+      <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-1 flex min-h-9 items-end justify-end md:mb-6">
         {isAdmin ? (
           <Button onClick={promptNew} disabled={createAlbum.isPending} icon={<Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
             {createAlbum.isPending ? '만드는 중…' : '새 앨범'}
