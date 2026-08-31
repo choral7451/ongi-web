@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { FeedPost } from '@/components/feed/FeedPost';
 import { NoGroupState } from '@/components/NoGroupState';
+import { LoadMoreSentinel } from '@/components/ui/LoadMoreSentinel';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/State';
 import { useAlbums, useFeed, useHasNoGroup, useMembers } from '@/lib/queries';
 import { dayKey, feedSectionTitle, formatFeedDate } from '@/lib/utils/format';
@@ -42,20 +43,23 @@ export function FeedScreen() {
       ) : sections.length === 0 ? (
         <EmptyState>아직 올라온 사진이 없어요. 첫 사진을 올려보세요.</EmptyState>
       ) : (
-        sections.map((section) => (
-          <section key={section.key} className="mb-[22px]">
-            <div className="flex flex-col gap-[22px]">
-              {section.photos.map((photo) => (
-                <FeedPost
-                  key={photo.id}
-                  photo={photo}
-                  author={members.data?.find((m) => m.id === photo.authorId)}
-                  album={albums.data?.find((a) => a.id === photo.albumId)}
-                />
-              ))}
-            </div>
-          </section>
-        ))
+        <>
+          {sections.map((section) => (
+            <section key={section.key} className="mb-[22px]">
+              <div className="flex flex-col gap-[22px]">
+                {section.photos.map((photo) => (
+                  <FeedPost
+                    key={photo.id}
+                    photo={photo}
+                    author={members.data?.find((m) => m.id === photo.authorId)}
+                    album={albums.data?.find((a) => a.id === photo.albumId)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+          <LoadMoreSentinel hasNextPage={feed.hasNextPage} isFetchingNextPage={feed.isFetchingNextPage} fetchNextPage={feed.fetchNextPage} />
+        </>
       )}
     </div>
   );

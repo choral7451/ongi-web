@@ -1,7 +1,7 @@
 'use client';
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 import { albumsApi, familyApi, groupsApi, photosApi, profileApi, reportsApi } from '@/lib/api';
 import type { UploadPayload } from '@/lib/api/photos';
 import { useActiveGroupId, useSession } from '@/lib/store/session';
@@ -58,18 +58,60 @@ export function useJoinGroup() {
 
 // ── 그룹 콘텐츠 ────────────────────────────────────────
 
+/** 사진 목록 페이지 크기 — 스크롤 끝에서 이어서 불러온다 */
+const PAGE_SIZE = 30;
+
+/**
+ * 사진 목록 공통 — 커서(직전 페이지 마지막 사진 id) 기반 무한 스크롤.
+ * 캐시에는 InfiniteData<Photo[]> 로 들어가지만, 소비처가 그대로 쓰도록 data 는 페이지를 평탄화한 Photo[] 로 돌려준다.
+ */
+function usePhotoList(queryKey: readonly unknown[], fetchPage: (after: string | undefined) => Promise<Photo[]>, enabled: boolean) {
+  const query = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam }) => fetchPage(pageParam),
+    initialPageParam: undefined as string | undefined,
+    // 한 페이지가 PAGE_SIZE 보다 짧으면 마지막 페이지
+    getNextPageParam: (lastPage) => (lastPage.length < PAGE_SIZE ? undefined : lastPage[lastPage.length - 1]?.id),
+    enabled,
+  });
+  const data = useMemo(() => query.data?.pages.flat(), [query.data]);
+  return { ...query, data };
+}
+
 export function useFeed() {
   const groupId = useActiveGroupId();
-  return useQuery({ queryKey: queryKeys.feed(groupId), queryFn: () => photosApi.getFeed(groupId), enabled: !!groupId });
+  return usePhotoList(queryKeys.feed(groupId), (after) => photosApi.getFeed(groupId, { limit: PAGE_SIZE, after }), !!groupId);
 }
 
 const PHOTO_LIST_KEYS = new Set(['feed', 'albumPhotos', 'unfiledPhotos']);
 
+/** 목록 캐시의 실제 모양 — 무한 스크롤 페이지 배열 */
+type PhotoListCache = InfiniteData<Photo[], string | undefined>;
+
+/** 모든 사진 목록 캐시(페이지 안의 사진)를 바꿔치기 — pageParams 는 보존, InfiniteData 모양이 아니면 건너뛴다 */
+function patchPhotoLists(qc: QueryClient, patch: (photo: Photo) => Photo) {
+  qc.setQueriesData<PhotoListCache>(
+    { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
+    (old) => (old && Array.isArray(old.pages) ? { ...old, pages: old.pages.map((page) => page.map(patch)) } : old),
+  );
+}
+
+/** 모든 사진 목록 캐시에서 keep 이 false 인 사진 제거 — pageParams 는 보존, InfiniteData 모양이 아니면 건너뛴다 */
+function filterPhotoLists(qc: QueryClient, keep: (photo: Photo) => boolean) {
+  qc.setQueriesData<PhotoListCache>(
+    { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
+    (old) => (old && Array.isArray(old.pages) ? { ...old, pages: old.pages.map((page) => page.filter(keep)) } : old),
+  );
+}
+
 /** 목록 캐시(피드·앨범·미분류)에 이미 있는 사진 — 상세 진입/이전·다음 이동 시 서버 응답 전에 바로 보여준다 */
 function findPhotoInLists(qc: QueryClient, id: string): Photo | undefined {
-  for (const [, data] of qc.getQueriesData<Photo[]>({ predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) })) {
-    const found = data?.find((p) => p.id === id);
-    if (found) return found;
+  for (const [, data] of qc.getQueriesData<PhotoListCache>({ predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) })) {
+    if (!data || !Array.isArray(data.pages)) continue;
+    for (const page of data.pages) {
+      const found = Array.isArray(page) ? page.find((p) => p.id === id) : undefined;
+      if (found) return found;
+    }
   }
   return undefined;
 }
@@ -86,10 +128,10 @@ export function usePhoto(id: string) {
 }
 
 export const useAlbumPhotos = (albumId: string) =>
-  useQuery({ queryKey: queryKeys.albumPhotos(albumId), queryFn: () => photosApi.getPhotosByAlbum(albumId), enabled: !!albumId });
+  usePhotoList(queryKeys.albumPhotos(albumId), (after) => photosApi.getPhotosByAlbum(albumId, { limit: PAGE_SIZE, after }), !!albumId);
 
 export const useUnfiledPhotos = (groupId: string) =>
-  useQuery({ queryKey: queryKeys.unfiledPhotos(groupId), queryFn: () => photosApi.getUnfiledPhotos(groupId), enabled: !!groupId });
+  usePhotoList(queryKeys.unfiledPhotos(groupId), (after) => photosApi.getUnfiledPhotos(groupId, { limit: PAGE_SIZE, after }), !!groupId);
 
 export const useComments = (photoId: string) =>
   useQuery({ queryKey: queryKeys.comments(photoId), queryFn: () => photosApi.getComments(photoId), enabled: !!photoId, placeholderData: keepPreviousData });
@@ -180,10 +222,8 @@ export function useToggleLike() {
     mutationFn: photosApi.toggleLike,
     onSuccess: (photo) => {
       qc.setQueryData(queryKeys.photo(photo.id), photo);
-      qc.setQueriesData<Photo[]>(
-        { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
-        (old) => old?.map((p) => (p.id === photo.id ? photo : p)),
-      );
+      // 리페치하면 스피너로 화면이 튀므로, 모든 사진 목록 캐시에서 해당 사진만 바꿔치기
+      patchPhotoLists(qc, (p) => (p.id === photo.id ? photo : p));
     },
   });
 }
@@ -213,7 +253,7 @@ export function useMovePhotos() {
     onSuccess: ({ movedIds }, { albumId }) => {
       const moved = new Set(movedIds);
       const patch = (p: Photo): Photo => (moved.has(p.id) ? { ...p, albumId: albumId ?? undefined } : p);
-      qc.setQueriesData<Photo[]>({ predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) }, (old) => old?.map(patch));
+      patchPhotoLists(qc, patch);
       for (const id of moved) qc.setQueryData<Photo>(queryKeys.photo(id), (old) => (old ? patch(old) : old));
       qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
       qc.invalidateQueries({ queryKey: ['albumPhotos'] });
@@ -231,10 +271,7 @@ export function useDeletePhotos() {
     onSuccess: ({ deletedIds }) => {
       const deleted = new Set(deletedIds);
       for (const id of deleted) qc.removeQueries({ queryKey: queryKeys.photo(id) });
-      qc.setQueriesData<Photo[]>(
-        { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
-        (old) => old?.filter((p) => !deleted.has(p.id)),
-      );
+      filterPhotoLists(qc, (p) => !deleted.has(p.id));
       qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
       qc.invalidateQueries({ queryKey: queryKeys.group(groupId) });
       qc.invalidateQueries({ queryKey: queryKeys.members(groupId) });
@@ -250,10 +287,7 @@ export function useDeletePhoto() {
     mutationFn: photosApi.deletePhoto,
     onSuccess: (_v, photoId) => {
       qc.removeQueries({ queryKey: queryKeys.photo(photoId) });
-      qc.setQueriesData<Photo[]>(
-        { predicate: (q) => PHOTO_LIST_KEYS.has(q.queryKey[0] as string) },
-        (old) => old?.filter((p) => p.id !== photoId),
-      );
+      filterPhotoLists(qc, (p) => p.id !== photoId);
       qc.invalidateQueries({ queryKey: queryKeys.albums(groupId) });
       qc.invalidateQueries({ queryKey: queryKeys.group(groupId) });
       qc.invalidateQueries({ queryKey: queryKeys.members(groupId) });

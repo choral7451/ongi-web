@@ -30,10 +30,17 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const albumPhotos = useAlbumPhotos(ctxAlbumId);
   const unfiled = useUnfiledPhotos(ctx === 'unfiled' ? groupId : '');
   // 홈 피드에서 들어온 경우(ctx=feed)는 이전/다음 없이 그 사진만 본다
-  const list = ctx === 'all' ? feed.data : ctxAlbumId ? albumPhotos.data : ctx === 'unfiled' ? unfiled.data : undefined;
+  const listQuery = ctx === 'all' ? feed : ctxAlbumId ? albumPhotos : ctx === 'unfiled' ? unfiled : undefined;
+  const list = listQuery?.data;
   const index = list?.findIndex((p) => p.id === id) ?? -1;
   const prev = list && index > 0 ? list[index - 1] : undefined;
   const next = list && index >= 0 && index < list.length - 1 ? list[index + 1] : undefined;
+
+  // 마지막으로 불러온 사진에 도달하면 다음 페이지를 불러와 '다음' 이동이 계속 이어지게
+  const atLoadedEnd = !!list && index >= 0 && index >= list.length - 1;
+  useEffect(() => {
+    if (atLoadedEnd && listQuery?.hasNextPage && !listQuery.isFetchingNextPage) listQuery.fetchNextPage();
+  }, [atLoadedEnd, listQuery]);
 
   const photo = usePhoto(id);
   const comments = useComments(id);
@@ -110,7 +117,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-2.5 flex items-center justify-between">
+      <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-2 flex items-center justify-between md:mb-2.5">
         <Link href={backHref} aria-label="뒤로" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>

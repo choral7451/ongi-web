@@ -2,14 +2,28 @@ import type { Comment, Photo } from '@/types';
 import { del, post, postForm, request } from './client';
 import { prepareImage } from '@/lib/utils/image';
 
-async function photoList(path: string): Promise<Photo[]> {
-  const result = await request<{ photos: Photo[] }>(path);
+/** 커서 페이지네이션 — after 는 직전 페이지 마지막 사진 id, 서버는 그보다 오래된 사진을 최신순으로 준다 */
+export interface PhotoListParams {
+  /** 페이지 크기 (1..100) */
+  limit?: number;
+  /** 직전 페이지 마지막 사진 id */
+  after?: string;
+}
+
+async function photoList(path: string, params?: PhotoListParams): Promise<Photo[]> {
+  const query = [
+    params?.limit != null ? `limit=${params.limit}` : '',
+    params?.after ? `after=${encodeURIComponent(params.after)}` : '',
+  ]
+    .filter(Boolean)
+    .join('&');
+  const result = await request<{ photos: Photo[] }>(query ? `${path}?${query}` : path);
   return result.photos;
 }
 
-export const getFeed = (groupId: string) => photoList(`/ongi/groups/${groupId}/photos`);
-export const getPhotosByAlbum = (albumId: string) => photoList(`/ongi/albums/${albumId}/photos`);
-export const getUnfiledPhotos = (groupId: string) => photoList(`/ongi/groups/${groupId}/photos/unfiled`);
+export const getFeed = (groupId: string, params?: PhotoListParams) => photoList(`/ongi/groups/${groupId}/photos`, params);
+export const getPhotosByAlbum = (albumId: string, params?: PhotoListParams) => photoList(`/ongi/albums/${albumId}/photos`, params);
+export const getUnfiledPhotos = (groupId: string, params?: PhotoListParams) => photoList(`/ongi/groups/${groupId}/photos/unfiled`, params);
 export const getPhoto = (id: string) => request<Photo>(`/ongi/photos/${id}`);
 
 export async function getComments(photoId: string): Promise<Comment[]> {

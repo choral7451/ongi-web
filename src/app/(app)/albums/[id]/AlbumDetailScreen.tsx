@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
 import { PhotoGrid } from '@/components/photos/PhotoGrid';
+import { LoadMoreSentinel } from '@/components/ui/LoadMoreSentinel';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { queryKeys, useAlbumPhotos, useAlbums, useCopyPhotos, useDeletePhotos, useFeed, useMembers, useMovePhotos, useMyGroups, useUnfiledPhotos } from '@/lib/queries';
@@ -118,7 +119,7 @@ export function AlbumDetailScreen({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-2 flex items-center justify-between gap-2 md:mb-2.5">
         <Link href="/albums" aria-label="앨범 목록으로" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <ChevronLeft className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>
@@ -158,6 +159,7 @@ export function AlbumDetailScreen({ id }: { id: string }) {
         onToggleSelect={toggleSelect}
         canSelect={canDelete}
       />
+      <LoadMoreSentinel hasNextPage={query.hasNextPage} isFetchingNextPage={query.isFetchingNextPage} fetchNextPage={query.fetchNextPage} />
       {selecting ? (
         <div className="sticky bottom-[calc(74px+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-divider bg-bg py-3 md:bottom-0">
           <div className="flex flex-wrap justify-end gap-2">
