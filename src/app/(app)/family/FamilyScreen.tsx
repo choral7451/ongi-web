@@ -123,7 +123,7 @@ export function FamilyScreen() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-1 md:mb-5">
+      <header className="sticky top-[calc(3.625rem+env(safe-area-inset-top))] z-20 -mx-5 bg-bg px-5 pt-1 pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 mb-1 md:mb-5">
         {family.data ? (
           <p className="text-xs tabular-nums text-muted">
             구성원 {family.data.memberCount}명 · 사진 {family.data.photoCount}장 · {family.data.sinceLabel}

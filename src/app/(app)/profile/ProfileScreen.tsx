@@ -62,7 +62,7 @@ export function ProfileScreen() {
   };
 
   return (
-    <div className="mx-auto max-w-xl pt-[calc(0.625rem+env(safe-area-inset-top))] md:pt-0">
+    <div className="mx-auto max-w-xl">
       <div className="flex flex-col items-center gap-2.5 pt-6 pb-5">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="프로필 이미지 변경">
           <Avatar name={name || '?'} src={me.data?.avatarUrl} size={92} className="border-0 text-[34px] text-accent-700" />

@@ -20,8 +20,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useActiveGroupSync();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  // 앱은 홈 탭에서만 ONGI 로고 + 가족 공간 선택 헤더를 보여준다. 다른 화면은 각자 헤더를 갖는다
-  const showMobileHeader = pathname === '/feed';
+  // ONGI 로고 + 가족 공간 선택 헤더 — 4개 탭 모두 상단 고정. 상세·모달 화면은 각자 헤더를 갖는다
+  const showMobileHeader = ['/feed', '/albums', '/family', '/profile'].includes(pathname);
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-6xl">
