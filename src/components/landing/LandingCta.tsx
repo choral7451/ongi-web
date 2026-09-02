@@ -36,11 +36,6 @@ export function LandingCta({ variant }: { variant: 'header' | 'hero' }) {
         </svg>
         App Store에서 받기
       </a>
-      {isAuthenticated ? null : (
-        <Link href="/legal/privacy" className="rounded-md border border-divider px-6 py-3 font-serif text-sm font-semibold text-ink hover:bg-neutral-100">
-          개인정보 처리방침 보기
-        </Link>
-      )}
     </>
   );
 }
