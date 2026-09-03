@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Share2 } from 'lucide-react';
+import { ChevronRight, Copy, Hash, LogOut, Plus, Share2 } from 'lucide-react';
 import { NoGroupState } from '@/components/NoGroupState';
 import { REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
@@ -193,19 +193,27 @@ export function FamilyScreen() {
         ) : null}
       </div>
 
-      {/* 헤더 드롭다운은 전환 전용 — 만들기·참여는 여기서 */}
-      <div className="mt-8 flex flex-col gap-2.5 md:mt-10">
-        <p className="text-[11px] tracking-[1px] text-accent">다른 가족 공간</p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={promptCreate}>새 공간 만들기</Button>
-          <Button variant="secondary" onClick={promptJoin}>초대 코드로 참여</Button>
+      {/* 헤더 드롭다운은 전환 전용 — 공간 관리는 설정 리스트 카드로 */}
+      <div className="mt-8 flex max-w-md flex-col gap-2.5 md:mt-10">
+        <p className="text-[11px] tracking-[1px] text-accent">공간 관리</p>
+        <div className="overflow-hidden rounded-md border border-divider">
+          <button type="button" onClick={promptCreate} className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-neutral-100">
+            <Plus className="h-4 w-4 text-muted" strokeWidth={1.75} />
+            <span className="flex-1 text-sm text-ink">새 공간 만들기</span>
+            <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
+          </button>
+          <div className="border-t border-divider" />
+          <button type="button" onClick={promptJoin} className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-neutral-100">
+            <Hash className="h-4 w-4 text-muted" strokeWidth={1.75} />
+            <span className="flex-1 text-sm text-ink">초대 코드로 참여</span>
+            <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
+          </button>
+          <div className="border-t border-divider" />
+          <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-neutral-100 disabled:opacity-50">
+            <LogOut className="h-4 w-4 text-danger" strokeWidth={1.75} />
+            <span className="flex-1 text-sm text-danger">{leave.isPending ? '나가는 중…' : '가족 공간 나가기'}</span>
+          </button>
         </div>
-      </div>
-
-      <div className="mt-7 flex justify-center py-3">
-        <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="text-[13px] text-danger underline underline-offset-2 hover:opacity-80 disabled:opacity-50">
-          {leave.isPending ? '나가는 중…' : '가족 공간 나가기'}
-        </button>
       </div>
     </div>
   );
