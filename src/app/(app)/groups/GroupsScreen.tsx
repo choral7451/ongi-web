@@ -101,7 +101,7 @@ export function GroupsScreen() {
             joinGroup.mutate(inviteCode, { onSuccess: (g) => switchTo(g.id), onError: (err) => setError(err.message) });
           }}
         >
-          <Input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder="예: ONGI-1234" autoFocus={tab === 'join'} aria-label="초대 코드" />
+          <Input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} placeholder="예: 483920" autoFocus={tab === 'join'} aria-label="초대 코드" />
           <Button type="submit" className="w-28" disabled={inviteCode.trim().length === 0 || joinGroup.isPending} icon={<Ticket className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
             {joinGroup.isPending ? '확인 중…' : '참여하기'}
           </Button>
