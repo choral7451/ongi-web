@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, MoreHorizontal, Share2 } from 'lucide-react';
+import { Copy, Share2 } from 'lucide-react';
 import { NoGroupState } from '@/components/NoGroupState';
 import { REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
@@ -150,7 +150,11 @@ export function FamilyScreen() {
             <Spinner />
           ) : (
             members.data?.map((member) => (
-              <li key={member.id} className="flex items-center gap-3 border-b border-divider py-3 last:border-b-0">
+              <li
+                key={member.id}
+                onClick={() => !member.isMe && openMemberActions(member)}
+                className={`flex items-center gap-3 border-b border-divider py-3 last:border-b-0 ${member.isMe ? '' : 'cursor-pointer hover:bg-neutral-100/60'}`}
+              >
                 <Avatar name={member.name} src={member.avatarUrl} size={40} pending={member.role === 'pending'} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-ink">
@@ -163,11 +167,6 @@ export function FamilyScreen() {
                   </p>
                 </div>
                 {roleTag(member)}
-                {member.isMe ? null : (
-                  <button type="button" onClick={() => openMemberActions(member)} aria-label={`${member.name} 옵션`} className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100">
-                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.75} />
-                  </button>
-                )}
               </li>
             ))
           )}
