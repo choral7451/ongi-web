@@ -2,12 +2,24 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDialog } from '@/components/ui/Dialog';
 import { profileApi } from '@/lib/api';
-import { DEFAULT_USER_NAME, DEV_LOGIN_ENABLED, signInAsDev, signInWithGoogle } from '@/lib/api/auth';
+import { DEFAULT_USER_NAME, DEV_LOGIN_ENABLED, signInAsDev, signInWithGoogle, signInWithKakaoCode } from '@/lib/api/auth';
+import { startKakaoLogin } from '@/lib/api/kakao';
 import { GoogleSignInCancelled } from '@/lib/api/google';
 import { useSession } from '@/lib/store/session';
+
+function KakaoLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#191919"
+        d="M12 3C6.48 3 2 6.58 2 10.95c0 2.84 1.9 5.33 4.75 6.73l-.97 3.62c-.09.33.29.6.58.4l4.29-2.86c.44.04.89.07 1.35.07 5.52 0 10-3.58 10-7.96C22 6.58 17.52 3 12 3z"
+      />
+    </svg>
+  );
+}
 
 function GoogleLogo() {
   return (
@@ -28,6 +40,7 @@ export function LoginScreen() {
   const setUser = useSession((s) => s.setUser);
   const setCurrentUserName = useSession((s) => s.setCurrentUserName);
   const [pending, setPending] = useState(false);
+  const kakaoHandled = useRef(false);
 
   const finish = async (user: { id: string; name: string; provider: string }) => {
     setUser(user);
@@ -52,6 +65,15 @@ export function LoginScreen() {
     }
   };
 
+  // 카카오 콜백에서 넘어온 인가 코드 처리 (1회)
+  const kakaoCode = params.get('kakaoCode');
+  useEffect(() => {
+    if (!kakaoCode || kakaoHandled.current) return;
+    kakaoHandled.current = true;
+    void start(() => signInWithKakaoCode(kakaoCode));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kakaoCode]);
+
   return (
     <div className="flex min-h-dvh flex-col items-center px-7 pt-[14vh] pb-10 md:justify-center md:pt-10">
       {/* 바닥에 고정하지 않고 위에서부터 쌓는다 — 모바일 브라우저 주소창 때문에 100vh 가 실제 화면보다 커서 버튼이 스크롤 아래로 밀리던 문제 */}
@@ -66,6 +88,17 @@ export function LoginScreen() {
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-2.5">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => startKakaoLogin(params.get('next'))}
+          className="relative flex h-13 items-center justify-center rounded-lg bg-[#FEE500] text-[15px] font-semibold text-[#191919] transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          <span className="absolute left-[18px] flex w-[22px] justify-center">
+            <KakaoLogo />
+          </span>
+          카카오로 시작하기
+        </button>
         <button
           type="button"
           disabled={pending}

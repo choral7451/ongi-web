@@ -1,5 +1,6 @@
 import { post, request } from './client';
 import { getGoogleAccessToken } from './google';
+import { exchangeKakaoCode } from './kakao';
 import { clearTokens, saveTokens } from './token';
 
 export type SocialProvider = 'google' | 'apple' | 'kakao' | 'naver';
@@ -25,6 +26,14 @@ interface LoginResponse {
 export async function signInWithGoogle(): Promise<AuthUser> {
   const token = await getGoogleAccessToken();
   const result = await post<LoginResponse>('/ongi/auths/login', { provider: 'google', token });
+  saveTokens(result.tokens);
+  return result.user;
+}
+
+/** 카카오 로그인 — 콜백에서 받은 인가 코드로 토큰 교환 후 서버 로그인 (미가입 시 자동 가입) */
+export async function signInWithKakaoCode(code: string): Promise<AuthUser> {
+  const token = await exchangeKakaoCode(code);
+  const result = await post<LoginResponse>('/ongi/auths/login', { provider: 'kakao', token });
   saveTokens(result.tokens);
   return result.user;
 }
