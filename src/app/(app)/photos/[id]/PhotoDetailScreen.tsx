@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button, IconButton } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
+import { Lightbox } from '@/components/ui/Lightbox';
 import { ErrorState, Spinner } from '@/components/ui/State';
 import { useAddComment, useAlbumPhotos, useAlbums, useComments, useDeleteComment, useFeed, useMembers, usePhoto, useReport, useToggleLike, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
@@ -107,6 +108,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
 
   // 이전/다음으로 넘길 때 새 이미지가 로드될 때까지 직전 이미지를 깔아두고 페이드로 교체 (빈 박스 깜빡임 방지)
   const [shown, setShown] = useState<{ url: string; aspectRatio: number } | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const incomingLoaded = loadedUrl === photo.data?.url;
   const commitIncoming = () => {
@@ -140,7 +142,13 @@ export function PhotoDetailScreen({ id }: { id: string }) {
         <ErrorState message="사진을 불러오지 못했어요." onRetry={() => photo.refetch()} />
       ) : (
         <>
-          <div className="relative overflow-hidden bg-accent-100 transition-[aspect-ratio] duration-200" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
+          <div
+            className="relative cursor-zoom-in overflow-hidden bg-accent-100 transition-[aspect-ratio] duration-200"
+            style={{ aspectRatio: photo.data.aspectRatio || 1 }}
+            onClick={() => photo.data && setLightboxSrc(photo.data.url)}
+            role="button"
+            aria-label="사진 크게 보기"
+          >
             {shown && shown.url !== photo.data.url && !incomingLoaded ? (
               <Image src={shown.url} alt="" aria-hidden fill sizes="(min-width: 768px) 768px, 100vw" className="object-contain" />
             ) : null}
@@ -217,6 +225,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
           </form>
         </>
       )}
+      {lightboxSrc ? <Lightbox src={lightboxSrc} alt={photo.data?.caption ?? '사진'} onClose={() => setLightboxSrc(null)} /> : null}
     </div>
   );
 }

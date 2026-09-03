@@ -20,7 +20,7 @@ export function AuthGuard({ children, mode = 'auth' }: { children: React.ReactNo
   useEffect(() => {
     if (!shouldRedirect) return;
     if (mode === 'auth') {
-      // 쿼리(예: /groups?code=ONGI-XXXX 초대 링크)까지 보존해 로그인 후 그대로 복귀
+      // 쿼리(예: /groups?code=6자리 숫자 초대 링크)까지 보존해 로그인 후 그대로 복귀
       const next = pathname + window.location.search;
       router.replace(`/login?next=${encodeURIComponent(next)}`);
     } else {

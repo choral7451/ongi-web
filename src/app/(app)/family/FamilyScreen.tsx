@@ -48,7 +48,7 @@ export function FamilyScreen() {
   };
 
   const promptJoin = async () => {
-    const code = await dialog.prompt({ title: '초대 코드로 참여', message: '받은 초대 코드(ONGI-XXXX)를 입력해 주세요.', confirmText: '참여하기', placeholder: 'ONGI-XXXX' });
+    const code = await dialog.prompt({ title: '초대 코드로 참여', message: '받은 6자리 초대 코드를 입력해 주세요.', confirmText: '참여하기', placeholder: '예: 483920' });
     if (code?.trim()) joinGroup.mutate(code.trim(), { onSuccess: (g) => setActiveGroup(g.id), onError: alertError('참여 실패') });
   };
   const isSoleAdmin = me?.role === 'admin' && !members.data?.some((m) => m.id !== me.id && m.role === 'admin');

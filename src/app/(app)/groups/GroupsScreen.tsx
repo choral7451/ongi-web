@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils/cn';
 export function GroupsScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // 초대 링크(/groups?code=ONGI-XXXX)로 들어오면 참여 탭 + 코드 프리필
+  // 초대 링크(/groups?code=6자리 숫자)로 들어오면 참여 탭 + 코드 프리필
   const codeParam = searchParams.get('code')?.trim().toUpperCase() ?? '';
   const tab = searchParams.get('tab') ?? (codeParam ? 'join' : null);
   const groups = useMyGroups();
