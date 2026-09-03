@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronDown, Home, Image as ImageIcon, Plus, User, Users } from 'lucide-react';
+import { Check, ChevronDown, Home, Image as ImageIcon, Plus, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useActiveGroupSync, useMyGroups } from '@/lib/queries';
 import { useSession } from '@/lib/store/session';
@@ -105,33 +106,81 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** 가족 공간 이름(→ 전환 화면)과 ONGI 로고(→ 홈)는 서로 다른 링크 */
+/** 가족 공간 드롭다운(전환 전용 — 만들기·참여는 가족 탭)과 ONGI 로고(→ 홈) */
 function GroupSwitcher({ compact = false }: { compact?: boolean }) {
   const queryClient = useQueryClient();
   const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['feed'] });
   const groups = useMyGroups();
   const activeGroupId = useSession((s) => s.activeGroupId);
+  const setActiveGroup = useSession((s) => s.setActiveGroup);
   const active = groups.data?.find((g) => g.id === activeGroupId);
+  const [open, setOpen] = useState(false);
+
+  const switchTo = (groupId: string) => {
+    setOpen(false);
+    if (groupId !== activeGroupId) setActiveGroup(groupId);
+  };
+
+  const dropdown = open ? (
+    <>
+      <button type="button" aria-label="닫기" onClick={() => setOpen(false)} className="fixed inset-0 z-40 cursor-default bg-ink/15" />
+      <div className={`absolute top-full z-50 mt-1.5 min-w-60 rounded-lg border border-divider bg-bg py-1 shadow-xl ${compact ? 'right-0' : 'left-0'}`}>
+        {groups.data?.map((group) => {
+          const isActive = group.id === activeGroupId;
+          return (
+            <button key={group.id} type="button" onClick={() => switchTo(group.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-neutral-100">
+              <span className="min-w-0 flex-1">
+                <span className={`block truncate text-sm ${isActive ? 'font-semibold text-accent' : 'text-ink'}`}>{group.name}</span>
+                <span className="block text-[11px] tabular-nums text-muted">구성원 {group.memberCount}명 · 사진 {group.photoCount}장</span>
+              </span>
+              {isActive ? <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.75} /> : null}
+            </button>
+          );
+        })}
+        <Link
+          href="/family"
+          onClick={() => setOpen(false)}
+          className="mt-1 block border-t border-divider px-3.5 py-2.5 text-[12.5px] text-accent hover:bg-neutral-100"
+        >
+          새 공간 만들기 · 초대 코드 참여
+        </Link>
+      </div>
+    </>
+  ) : null;
 
   if (compact) {
     return (
-      <Link
-        href="/groups"
-        className="flex max-w-[50%] items-center gap-1 rounded-full border border-divider px-3 py-[7px] text-[13px] tracking-[0.3px] text-accent"
-        aria-label="가족 공간 전환"
-      >
-        <span className="truncate">{active?.name ?? '우리 가족의 오늘'}</span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-      </Link>
+      <div className="relative max-w-[50%]">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center gap-1 rounded-full border border-divider px-3 py-[7px] text-[13px] tracking-[0.3px] text-accent"
+          aria-label="가족 공간 전환"
+          aria-expanded={open}
+        >
+          <span className="truncate">{active?.name ?? '우리 가족의 오늘'}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+        </button>
+        {dropdown}
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col">
-      <Link href="/groups" className="flex items-center gap-1 text-[11px] tracking-wide text-accent hover:underline" aria-label="가족 공간 전환">
-        {active?.name ?? '우리 가족의 오늘'}
-        <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
-      </Link>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 text-[11px] tracking-wide text-accent hover:underline"
+          aria-label="가족 공간 전환"
+          aria-expanded={open}
+        >
+          {active?.name ?? '우리 가족의 오늘'}
+          <ChevronDown className="h-3 w-3" strokeWidth={1.75} />
+        </button>
+        {dropdown}
+      </div>
       <Link href="/feed" onClick={refreshFeed} className="inline-block origin-left scale-x-[1.15] text-3xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]" aria-label="홈으로">
         ONGI
       </Link>

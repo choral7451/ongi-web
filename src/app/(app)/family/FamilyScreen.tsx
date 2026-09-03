@@ -9,8 +9,8 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/State';
 import { Tag } from '@/components/ui/Tag';
 import { useRouter } from 'next/navigation';
-import { useBlockMember, useFamily, useHasNoGroup, useLeaveGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
-import { useActiveGroupId } from '@/lib/store/session';
+import { useBlockMember, useCreateGroup, useFamily, useHasNoGroup, useJoinGroup, useLeaveGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
+import { useActiveGroupId, useSession } from '@/lib/store/session';
 import { buildInviteMessage } from '@/lib/utils/invite';
 import type { Member } from '@/types';
 
@@ -38,6 +38,19 @@ export function FamilyScreen() {
   const inviteCode = family.data?.inviteCode ?? '';
   const me = members.data?.find((m) => m.isMe);
   const leave = useLeaveGroup();
+  const createGroup = useCreateGroup();
+  const joinGroup = useJoinGroup();
+  const setActiveGroup = useSession((s) => s.setActiveGroup);
+
+  const promptCreate = async () => {
+    const name = await dialog.prompt({ title: '새 공간 만들기', message: '가족 공간 이름을 입력해 주세요.', confirmText: '만들기', placeholder: '예: 온기가족' });
+    if (name?.trim()) createGroup.mutate(name.trim(), { onSuccess: (g) => setActiveGroup(g.id), onError: alertError('공간 만들기 실패') });
+  };
+
+  const promptJoin = async () => {
+    const code = await dialog.prompt({ title: '초대 코드로 참여', message: '받은 초대 코드(ONGI-XXXX)를 입력해 주세요.', confirmText: '참여하기', placeholder: 'ONGI-XXXX' });
+    if (code?.trim()) joinGroup.mutate(code.trim(), { onSuccess: (g) => setActiveGroup(g.id), onError: alertError('참여 실패') });
+  };
   const isSoleAdmin = me?.role === 'admin' && !members.data?.some((m) => m.id !== me.id && m.role === 'admin');
   const othersCount = (members.data?.length ?? 1) - 1;
   const confirmLeave = async () => {
@@ -182,6 +195,15 @@ export function FamilyScreen() {
       </div>
 
       <div className="mt-7 flex justify-center py-3 md:mt-10">
+        {/* 헤더 드롭다운은 전환 전용 — 만들기·참여는 여기서 */}
+        <div className="mt-6 flex flex-col gap-2.5">
+          <p className="text-[11px] tracking-[1px] text-accent">다른 가족 공간</p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={promptCreate}>새 공간 만들기</Button>
+            <Button onClick={promptJoin}>초대 코드로 참여</Button>
+          </div>
+        </div>
+
         <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="text-[13px] text-danger underline underline-offset-2 hover:opacity-80 disabled:opacity-50">
           {leave.isPending ? '나가는 중…' : '가족 공간 나가기'}
         </button>
