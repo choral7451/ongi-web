@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Copy, Hash, LogOut, Plus, Share2 } from 'lucide-react';
+import { ChevronRight, Copy, Hash, LogOut, Pencil, Plus, Share2 } from 'lucide-react';
 import { NoGroupState } from '@/components/NoGroupState';
 import { REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
@@ -9,7 +9,7 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/State';
 import { Tag } from '@/components/ui/Tag';
 import { useRouter } from 'next/navigation';
-import { useBlockMember, useCreateGroup, useFamily, useHasNoGroup, useJoinGroup, useLeaveGroup, useMembers, useRemoveMember, useReport, useUnblockMember } from '@/lib/queries';
+import { useBlockMember, useCreateGroup, useFamily, useHasNoGroup, useJoinGroup, useLeaveGroup, useMembers, useRemoveMember, useRenameGroup, useReport, useUnblockMember } from '@/lib/queries';
 import { useActiveGroupId, useSession } from '@/lib/store/session';
 import { buildInviteMessage } from '@/lib/utils/invite';
 import type { Member } from '@/types';
@@ -41,6 +41,13 @@ export function FamilyScreen() {
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
   const setActiveGroup = useSession((s) => s.setActiveGroup);
+
+  const renameGroup = useRenameGroup();
+  const isAdmin = members.data?.find((m) => m.isMe)?.role === 'admin';
+  const promptRename = async () => {
+    const name = await dialog.prompt({ title: '공간 이름 바꾸기', message: '가족 모두에게 새 이름으로 보여요.', confirmText: '변경', defaultValue: family.data?.name ?? '' });
+    if (name?.trim()) renameGroup.mutate({ groupId: activeGroupId, name: name.trim() }, { onError: alertError('이름 변경 실패') });
+  };
 
   const promptCreate = async () => {
     const name = await dialog.prompt({ title: '새 공간 만들기', message: '가족 공간 이름을 입력해 주세요.', confirmText: '만들기', placeholder: '예: 온기가족' });
@@ -197,6 +204,16 @@ export function FamilyScreen() {
       <div className="mt-8 flex max-w-md flex-col gap-2.5 md:mt-10">
         <p className="text-[11px] tracking-[1px] text-accent">공간 관리</p>
         <div className="overflow-hidden rounded-md border border-divider">
+          {isAdmin ? (
+            <>
+              <button type="button" onClick={promptRename} className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-neutral-100">
+                <Pencil className="h-4 w-4 text-muted" strokeWidth={1.75} />
+                <span className="flex-1 text-sm text-ink">공간 이름 바꾸기</span>
+                <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
+              </button>
+              <div className="border-t border-divider" />
+            </>
+          ) : null}
           <button type="button" onClick={promptCreate} className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left hover:bg-neutral-100">
             <Plus className="h-4 w-4 text-muted" strokeWidth={1.75} />
             <span className="flex-1 text-sm text-ink">새 공간 만들기</span>

@@ -51,6 +51,17 @@ export function useCreateGroup() {
   return useMutation({ mutationFn: groupsApi.createGroup, onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.myGroups }) });
 }
 
+export function useRenameGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: groupsApi.renameGroup,
+    onSuccess: (_g, { groupId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.myGroups });
+      qc.invalidateQueries({ queryKey: queryKeys.group(groupId) });
+    },
+  });
+}
+
 export function useJoinGroup() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: groupsApi.joinGroup, onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.myGroups }) });
