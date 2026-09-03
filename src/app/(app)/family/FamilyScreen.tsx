@@ -194,16 +194,16 @@ export function FamilyScreen() {
         ) : null}
       </div>
 
-      <div className="mt-7 flex justify-center py-3 md:mt-10">
-        {/* 헤더 드롭다운은 전환 전용 — 만들기·참여는 여기서 */}
-        <div className="mt-6 flex flex-col gap-2.5">
-          <p className="text-[11px] tracking-[1px] text-accent">다른 가족 공간</p>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={promptCreate}>새 공간 만들기</Button>
-            <Button onClick={promptJoin}>초대 코드로 참여</Button>
-          </div>
+      {/* 헤더 드롭다운은 전환 전용 — 만들기·참여는 여기서 */}
+      <div className="mt-8 flex flex-col gap-2.5 md:mt-10">
+        <p className="text-[11px] tracking-[1px] text-accent">다른 가족 공간</p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={promptCreate}>새 공간 만들기</Button>
+          <Button variant="secondary" onClick={promptJoin}>초대 코드로 참여</Button>
         </div>
+      </div>
 
+      <div className="mt-7 flex justify-center py-3">
         <button type="button" onClick={confirmLeave} disabled={leave.isPending} className="text-[13px] text-danger underline underline-offset-2 hover:opacity-80 disabled:opacity-50">
           {leave.isPending ? '나가는 중…' : '가족 공간 나가기'}
         </button>
