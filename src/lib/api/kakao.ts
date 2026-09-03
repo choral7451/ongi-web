@@ -5,7 +5,7 @@
  */
 
 /** REST API 키 — 클라이언트 노출 가능한 공개 키 */
-const KAKAO_REST_KEY = '0e5172be96be3b8c6c6566bf09bd209f';
+const KAKAO_REST_KEY = '7439f54ea9157ce1c1363646c460634d';
 
 const redirectUri = () => `${window.location.origin}/login/kakao`;
 
