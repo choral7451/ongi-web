@@ -2,6 +2,7 @@
 
 import { Check, ImagePlus, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Lightbox } from '@/components/ui/Lightbox';
 import { useEffect, useRef, useState } from 'react';
 import { NoGroupState } from '@/components/NoGroupState';
 import { Button } from '@/components/ui/Button';
@@ -66,6 +67,7 @@ export function UploadScreen() {
     return () => cache.forEach((url) => URL.revokeObjectURL(url));
   }, []);
   const previews = files.map((file) => ({ file, url: thumbs.get(file) }));
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const addFiles = async (list: FileList | null) => {
     if (!list) return;
@@ -156,6 +158,31 @@ export function UploadScreen() {
       </div>
 
       <div className="flex flex-col gap-4">
+        <div>
+          <SectionHeader title="사진" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
+          <div className="grid grid-cols-3 gap-2">
+            {previews.map((p, i) => (
+              <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
+                {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
+                {p.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" onClick={() => p.url && setLightboxSrc(p.url)} className="h-full w-full cursor-zoom-in object-cover" />
+                ) : null}
+                <span className="absolute top-1.5 left-1.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent text-xs tabular-nums text-white">{i + 1}</span>
+                <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
+                  <X className="h-3 w-3" strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+            {files.length < MAX_FILES ? (
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
+                <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
+                사진 선택
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+              </label>
+            ) : null}
+          </div>
+        </div>
         <div className="flex flex-col gap-[5px]">
           <p className="text-xs text-ink/70">올릴 공간</p>
           <div className="flex flex-wrap gap-2">
@@ -199,32 +226,8 @@ export function UploadScreen() {
           <Textarea id="upload-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 이야기를 적어보세요" maxLength={200} className="min-h-9" rows={1} />
         </div>
 
-        <div>
-          <SectionHeader title="사진" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
-          <div className="grid grid-cols-4 gap-1.5">
-            {previews.map((p, i) => (
-              <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
-                {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
-                {p.url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.url} alt={`선택한 사진 ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                ) : null}
-                <span className="absolute top-[5px] left-[5px] flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-[10px] tabular-nums text-white">{i + 1}</span>
-                <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label="사진 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
-                  <X className="h-3 w-3" strokeWidth={2} />
-                </button>
-              </div>
-            ))}
-            {files.length < MAX_FILES ? (
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
-                <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
-                사진 선택
-                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
-              </label>
-            ) : null}
-          </div>
-        </div>
       </div>
+      {lightboxSrc ? <Lightbox src={lightboxSrc} alt="선택한 사진" onClose={() => setLightboxSrc(null)} /> : null}
     </div>
   );
 }
@@ -234,7 +237,7 @@ function AlbumPicker({ groupId, value, onChange }: { groupId: string; value: str
   const albums = useAlbumsOf(groupId);
   return (
     <div className="flex flex-col gap-[5px]">
-      <p className="text-xs text-ink/70">앨범 (선택)</p>
+      <p className="text-xs text-ink/70">어느 앨범에 담을까요?</p>
       <div className="flex flex-wrap gap-2">
         {albums.data && albums.data.length > 0 ? (
           albums.data.map((a) => {
@@ -245,7 +248,7 @@ function AlbumPicker({ groupId, value, onChange }: { groupId: string; value: str
                 type="button"
                 onClick={() => onChange(selected ? '' : a.id)}
                 aria-pressed={selected}
-                className={cn('rounded-[3px] px-2.5 text-[11px]', selected ? 'border border-accent py-[2px] text-accent' : 'bg-neutral-200 py-[3px] text-neutral-800')}
+                className={cn('flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs', selected ? 'border-accent bg-accent-100 text-accent-800' : 'border-divider text-neutral-700')}
               >
                 {a.title}
               </button>
