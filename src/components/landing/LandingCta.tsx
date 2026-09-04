@@ -21,9 +21,11 @@ export function LandingCta({ variant }: { variant: 'header' | 'hero' }) {
   }
   return (
     <>
-      <Link href={href} className="rounded-md bg-accent px-6 py-3 font-serif text-sm font-semibold text-white hover:bg-accent-700">
-        {label}
-      </Link>
+      {isAuthenticated ? (
+        <Link href={href} className="rounded-md bg-accent px-6 py-3 font-serif text-sm font-semibold text-white hover:bg-accent-700">
+          {label}
+        </Link>
+      ) : null}
       <a
         href={APP_STORE_URL}
         target="_blank"

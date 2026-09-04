@@ -1,4 +1,5 @@
 import { Heart, Images, Lock, Users } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { LandingCta } from '@/components/landing/LandingCta';
 import { LandingRedirect } from '@/components/landing/LandingRedirect';
@@ -26,21 +27,34 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="mx-auto flex max-w-5xl flex-col items-center px-6 pt-16 pb-20 text-center md:pt-24">
-          <p className="mb-4 text-[11px] tracking-[0.2em] text-accent">우리 가족의 오늘을 담는 곳</p>
-          <h1 className="font-serif text-5xl leading-tight font-semibold text-ink md:text-6xl">
-            흩어져 있는 가족의 하루를
-            <br />한 곳에 모아 함께 봐요
-          </h1>
-          <div className="my-7 h-px w-14 bg-accent-300" />
-          <p className="max-w-xl text-base leading-7 text-muted">
-            온기는 가족만 들어올 수 있는 사진 공간이에요. 부모님 폰에도, 형제 폰에도 흩어진 사진을 한곳에 모으고, 서로의 오늘에 따뜻한
-            한마디를 남겨보세요.
-          </p>
-          <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-            <LandingCta variant="hero" />
+        <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 pt-14 pb-16 md:grid-cols-[1fr_auto] md:gap-16 md:pt-20 md:pb-24">
+          <div className="flex flex-col items-center text-center md:items-start md:text-left">
+            <p className="mb-4 text-[11px] tracking-[0.2em] text-accent">우리 가족의 오늘을 담는 곳</p>
+            <h1 className="font-serif text-4xl leading-tight font-semibold text-ink md:text-6xl">
+              흩어져 있는 가족의
+              <br />
+              하루를 한곳에
+            </h1>
+            <div className="my-6 h-px w-14 bg-accent-300" />
+            <p className="max-w-xl text-base leading-7 text-muted">
+              온기는 가족만 들어올 수 있는 사진 공간이에요. 부모님 폰에도, 형제 폰에도 흩어진 사진을 한곳에 모으고, 서로의 오늘에
+              따뜻한 한마디를 남겨보세요.
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+              <LandingCta variant="hero" />
+            </div>
+            <p className="mt-4 text-xs text-neutral-500">카카오·구글 계정으로 3초 만에 시작 · 웹에서도 이어서 볼 수 있어요</p>
           </div>
-          <p className="mt-4 text-xs text-neutral-500">iOS 앱과 웹에서 같은 계정으로 이어서 볼 수 있어요.</p>
+          <div className="mx-auto w-[240px] shrink-0 rounded-[36px] border border-divider bg-white p-2 shadow-[0_24px_60px_-24px_rgba(16,17,20,0.25)] md:w-[280px]">
+            <Image
+              src="/landing/01-home.webp"
+              alt="온기 앱 홈 피드 화면"
+              width={640}
+              height={1386}
+              priority
+              className="w-full rounded-[28px]"
+            />
+          </div>
         </section>
 
         <section id="features" className="border-t border-divider bg-neutral-100/60">
@@ -58,10 +72,31 @@ export default function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-6 py-16">
+          <div className="grid gap-10 sm:grid-cols-3">
+            {[
+              ['/landing/03-album-all.webp', '모든 사진을 한눈에', '가족이 올린 사진이 앨범으로 차곡차곡 모여요.'],
+              ['/landing/04-family.webp', '초대 코드 하나면 끝', '6자리 코드를 보내면 부모님도 바로 함께해요.'],
+              ['/landing/02-albums.webp', '여행·성장 앨범 정리', '여행, 명절, 아이 성장을 앨범으로 나눠 담아요.'],
+            ].map(([src, title, body]) => (
+              <figure key={src} className="flex flex-col items-center gap-4">
+                <div className="w-[200px] rounded-[30px] border border-divider bg-white p-1.5 shadow-[0_18px_44px_-20px_rgba(16,17,20,0.22)]">
+                  <Image src={src} alt={title} width={640} height={1386} className="w-full rounded-[24px]" />
+                </div>
+                <figcaption className="text-center">
+                  <p className="font-serif text-base font-semibold text-ink">{title}</p>
+                  <p className="mt-1 text-sm leading-6 text-muted">{body}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
+        <section className="border-t border-divider">
+          <div className="mx-auto max-w-5xl px-6 py-16">
           <div className="grid gap-10 md:grid-cols-3">
             {[
-              ['1', '가족 공간 만들기', '구글 계정으로 시작하고 "김씨네 온기" 같은 이름으로 공간을 만들어요.'],
-              ['2', '초대 코드 나누기', '발급된 초대 코드를 가족 채팅방에 보내면, 코드 입력만으로 바로 참여해요.'],
+              ['1', '가족 공간 만들기', '카카오나 구글 계정으로 시작하고 "김씨네 온기" 같은 이름으로 공간을 만들어요.'],
+              ['2', '초대 코드 나누기', '6자리 초대 코드를 가족 채팅방에 보내면, 코드 입력만으로 바로 참여해요.'],
               ['3', '사진 올리고 마음 남기기', '오늘 찍은 사진을 올리고, 가족이 남긴 따뜻해요와 한마디를 확인해요.'],
             ].map(([step, title, body]) => (
               <div key={step} className="flex gap-4">
@@ -72,6 +107,7 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
           </div>
         </section>
       </main>
