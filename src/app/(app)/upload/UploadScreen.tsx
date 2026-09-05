@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, ImagePlus, Loader2, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { useEffect, useRef, useState } from 'react';
@@ -9,31 +10,165 @@ import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { albumsApi } from '@/lib/api';
 import { useAlbumsOf, useHasNoGroup, useMyGroups, useUploadPhotos } from '@/lib/queries';
 import { UPLOAD_MAX_SELECT } from '@/lib/api/photos';
-import { useActiveGroupId } from '@/lib/store/session';
 import { cn } from '@/lib/utils/cn';
 import { makeThumbnail } from '@/lib/utils/image';
+import type { Group } from '@/types';
 
 const MAX_FILES = UPLOAD_MAX_SELECT;
 
-/** 사진 올리기 — 파일 선택 → 문구·게시할 공간/앨범 → 업로드 (원본 비율 유지, 긴 변 2048 축소) */
+/** 그룹별 업로드 대상 — 키가 있으면 그 가족에 올린다 (albumId 없으면 미분류) */
+type Targets = Record<string, { albumId?: string }>;
+
+/** 지난 업로드 대상 — 다음 업로드 때 기본값으로 미리 채운다 */
+const LAST_TARGETS_KEY = 'ongi.upload.lastTargets';
+
+const loadLastTargets = (): Targets | null => {
+  try {
+    const raw = localStorage.getItem(LAST_TARGETS_KEY);
+    return raw ? (JSON.parse(raw) as Targets) : null;
+  } catch {
+    return null;
+  }
+};
+const saveLastTargets = (targets: Targets) => {
+  try {
+    localStorage.setItem(LAST_TARGETS_KEY, JSON.stringify(targets));
+  } catch {
+    /* 저장 실패는 무시 — 다음에 다시 고르면 된다 */
+  }
+};
+
+/** 허브 시트의 가족 한 줄 — 선택되면 담을 앨범 이름을 보여준다 */
+function HubRow({
+  group,
+  target,
+  onPress,
+  onClear,
+}: {
+  group: Group;
+  target: { albumId?: string } | undefined;
+  onPress: () => void;
+  onClear: () => void;
+}) {
+  const albums = useAlbumsOf(group.id);
+  const selected = target != null;
+  const albumName = target?.albumId != null ? albums.data?.find((a) => a.id === target.albumId)?.title : undefined;
+
+  return (
+    <button type="button" onClick={onPress} className="flex w-full items-center gap-3 border-b border-divider py-3 text-left">
+      <span className={cn('flex h-[34px] w-[34px] items-center justify-center rounded-full border border-divider font-serif text-[15px] font-semibold', selected ? 'bg-accent-100 text-accent-800' : 'bg-neutral-100 text-neutral-700')}>
+        {group.name.slice(0, 1)}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-px">
+        <span className={cn('truncate text-sm', selected ? 'text-accent' : 'text-ink')}>{group.name}</span>
+        <span className={cn('truncate text-[11px]', selected ? 'text-accent' : 'text-muted')}>
+          {selected ? `${albumName ?? '미분류'} 앨범에 담아요` : '누르면 앨범을 골라요'}
+        </span>
+      </span>
+      {selected ? (
+        <span
+          role="button"
+          aria-label={`${group.name} 선택 해제`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClear();
+          }}
+          className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent"
+        >
+          <Check className="h-[13px] w-[13px] text-white" strokeWidth={2.5} />
+        </span>
+      ) : (
+        <ChevronRight className="h-[15px] w-[15px] text-neutral-500" strokeWidth={1.75} />
+      )}
+    </button>
+  );
+}
+
+/** 앨범 한 줄 — 라디오 + 이름 */
+function AlbumRowItem({ label, picked, onPick }: { label: string; picked: boolean; onPick: () => void }) {
+  return (
+    <button type="button" onClick={onPick} className="flex w-full items-center gap-3 border-b border-divider py-3.5 text-left">
+      <span className={cn('h-5 w-5 rounded-full', picked ? 'border-[6px] border-accent' : 'border-[1.5px] border-ink/30')} />
+      <span className={cn('flex-1 text-sm', picked ? 'text-accent' : 'text-ink')}>{label}</span>
+    </button>
+  );
+}
+
+/** 앨범 선택 창 — 가족 하나의 앨범 목록. 고르면 즉시 허브로 돌아간다 */
+function AlbumSheet({
+  group,
+  current,
+  onPick,
+  onBack,
+  onUnselect,
+}: {
+  group: Group;
+  current: { albumId?: string } | undefined;
+  onPick: (albumId: string | undefined) => void;
+  onBack: () => void;
+  onUnselect: () => void;
+}) {
+  const albums = useAlbumsOf(group.id);
+  const queryClient = useQueryClient();
+  const dialog = useDialog();
+  const alertError = useAlertError();
+
+  const createAlbum = async () => {
+    const title = await dialog.prompt({ title: '새 앨범 만들기', message: '앨범 이름을 입력해 주세요.' });
+    const name = title?.trim();
+    if (!name) return;
+    try {
+      const album = await albumsApi.createAlbum(group.id, name);
+      await queryClient.invalidateQueries({ queryKey: ['albums', group.id] });
+      onPick(album.id);
+    } catch (e) {
+      alertError('앨범 만들기 실패')(e);
+    }
+  };
+
+  return (
+    <>
+      <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-left">
+        <ChevronLeft className="h-4 w-4 text-ink" strokeWidth={1.75} />
+        <span className="truncate font-serif text-base font-semibold text-ink">{group.name} · 어느 앨범에 담을까요?</span>
+      </button>
+      <p className="mt-1 mb-1 pl-6 text-xs text-muted">앨범을 고르면 이전 화면으로 돌아가요</p>
+      <div className="max-h-80 overflow-y-auto">
+        <AlbumRowItem label="미분류" picked={current != null && current.albumId == null} onPick={() => onPick(undefined)} />
+        {albums.data?.map((album) => (
+          <AlbumRowItem key={album.id} label={album.title} picked={current?.albumId === album.id} onPick={() => onPick(album.id)} />
+        ))}
+        <button type="button" onClick={createAlbum} className="flex w-full items-center gap-3 border-b border-divider py-3.5 text-left">
+          <Plus className="h-4 w-4 text-accent" strokeWidth={1.75} />
+          <span className="text-sm text-accent">새 앨범 만들기</span>
+        </button>
+        {current != null ? (
+          <button type="button" onClick={onUnselect} className="flex w-full items-center py-3.5 text-left">
+            <span className="text-[13px] text-danger">이 가족에는 올리지 않기</span>
+          </button>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+/** 사진 올리기 — 화면은 사진 고르기에 집중, 올리기를 누르면 "어디에 올릴까요?" 허브에서 가족·앨범을 고른다 */
 export function UploadScreen() {
   const router = useRouter();
   const dialog = useDialog();
   const alertError = useAlertError();
   const hasNoGroup = useHasNoGroup();
-  const activeGroupId = useActiveGroupId();
   const groups = useMyGroups();
   const upload = useUploadPhotos();
 
   const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [caption, setCaption] = useState('');
-  // 사용자가 손대기 전(null)에는 활성 그룹이 기본 게시 대상
-  const [pickedGroupIds, setTargetGroupIds] = useState<string[] | null>(null);
-  const targetGroupIds = pickedGroupIds ?? (activeGroupId ? [activeGroupId] : []);
-  const [albumByGroup, setAlbumByGroup] = useState<Record<string, string>>({});
+  const [targets, setTargets] = useState<Targets>({});
+  const [sheet, setSheet] = useState<null | { step: 'hub' } | { step: 'album'; groupId: string }>(null);
 
   // 파일별 썸네일 URL 캐시 — 한 장을 빼도 나머지는 다시 디코딩하지 않는다 (이전엔 전체 재생성으로 수 초 멈춤)
   const thumbCache = useRef(new Map<File, string>());
@@ -80,11 +215,24 @@ export function UploadScreen() {
     setFiles(next);
   };
 
-  const toggleGroup = (id: string) =>
-    setTargetGroupIds(targetGroupIds.includes(id) ? targetGroupIds.filter((g) => g !== id) : [...targetGroupIds, id]);
+  /** 올리기 버튼 → 허브 시트 열기 (지난 업로드의 선택을 기본값으로) */
+  const openTargetSheet = () => {
+    if (Object.keys(targets).length === 0) {
+      const last = loadLastTargets();
+      if (last) {
+        const valid = Object.fromEntries(Object.entries(last).filter(([groupId]) => groups.data?.some((g) => g.id === groupId)));
+        if (Object.keys(valid).length > 0) setTargets(valid);
+      }
+    }
+    setSheet({ step: 'hub' });
+  };
+
+  const targetCount = Object.keys(targets).length;
 
   const submit = () => {
-    if (files.length === 0 || targetGroupIds.length === 0) return;
+    if (files.length === 0 || targetCount === 0) return;
+    saveLastTargets(targets);
+    setSheet(null);
     runUpload(files, true);
   };
 
@@ -94,7 +242,7 @@ export function UploadScreen() {
       {
         files: targetFiles,
         caption: withCaption ? caption.trim() || undefined : undefined,
-        targets: targetGroupIds.map((groupId) => ({ groupId, albumId: albumByGroup[groupId] || undefined })),
+        targets: Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId })),
         onProgress: (done, total) => setProgress({ done, total }),
       },
       {
@@ -123,6 +271,7 @@ export function UploadScreen() {
   if (hasNoGroup) return <NoGroupState />;
 
   const percent = progress ? Math.round((progress.done / Math.max(progress.total, 1)) * 100) : 0;
+  const sheetGroup = sheet?.step === 'album' ? groups.data?.find((g) => g.id === sheet.groupId) : undefined;
 
   return (
     <div className="mx-auto max-w-2xl" aria-busy={upload.isPending}>
@@ -146,20 +295,20 @@ export function UploadScreen() {
         </div>
       ) : null}
 
-      {/* 앱의 모달 헤더 — 닫기 · 제목(중앙 고정) · 올리기 */}
+      {/* 앱의 모달 헤더 — 닫기 · 제목(중앙 고정) · 올리기(→ 어디에 올릴까요 허브) */}
       <div className="sticky top-0 z-20 -mx-5 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 md:static md:z-auto md:mx-0 md:bg-transparent md:p-0 relative mb-4 flex items-center justify-between">
         <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-serif text-xl font-semibold text-ink">사진 올리기</span>
         <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <Button onClick={submit} disabled={files.length === 0 || targetGroupIds.length === 0 || upload.isPending} className="relative">
-          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : '올리기'}
+        <Button onClick={openTargetSheet} disabled={files.length === 0 || upload.isPending} className="relative">
+          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : files.length > 0 ? `${files.length}장 올리기` : '올리기'}
         </Button>
       </div>
 
       <div className="flex flex-col gap-4">
         <div>
-          <SectionHeader title="사진" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
+          <SectionHeader title="올릴 사진을 골라주세요" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
           <div className="grid grid-cols-3 gap-2">
             {previews.map((p, i) => (
               <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
@@ -183,41 +332,6 @@ export function UploadScreen() {
             ) : null}
           </div>
         </div>
-        <div className="flex flex-col gap-[5px]">
-          <p className="text-xs text-ink/70">올릴 공간</p>
-          <div className="flex flex-wrap gap-2">
-            {groups.data?.map((group) => {
-              const checked = targetGroupIds.includes(group.id);
-              return (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => toggleGroup(group.id)}
-                  aria-pressed={checked}
-                  className={cn('flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs', checked ? 'border-accent bg-accent-100 text-accent-800' : 'border-divider text-neutral-700')}
-                >
-                  {checked ? <Check className="h-[13px] w-[13px] text-accent" strokeWidth={2.2} /> : null}
-                  {group.name}
-                </button>
-              );
-            })}
-          </div>
-          {targetGroupIds.length > 1 ? <p className="mt-1 text-[11px] text-muted">선택한 공간마다 따로 게시돼요. 좋아요·댓글도 공간별로 분리됩니다.</p> : null}
-        </div>
-
-        {/* 공간 1개든 여러 개든 같은 카드 UI — 공간 이름 + 그 공간의 앨범 칩 */}
-        {targetGroupIds.map((groupId) => {
-          const group = groups.data?.find((g) => g.id === groupId);
-          return (
-            <div key={groupId} className="flex flex-col gap-3.5 rounded-lg border border-divider p-3.5">
-              <div className="flex items-center gap-2.5">
-                <p className="font-serif text-[15px] font-semibold text-ink">{group?.name ?? ''}</p>
-                <span className="h-px flex-1 bg-accent-300" aria-hidden />
-              </div>
-              <AlbumPicker groupId={groupId} value={albumByGroup[groupId] ?? ''} onChange={(albumId) => setAlbumByGroup({ ...albumByGroup, [groupId]: albumId })} />
-            </div>
-          );
-        })}
 
         <div className="flex flex-col gap-[5px]">
           <label htmlFor="upload-caption" className="text-xs text-ink/70">
@@ -225,39 +339,75 @@ export function UploadScreen() {
           </label>
           <Textarea id="upload-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 이야기를 적어보세요" maxLength={200} className="min-h-9" rows={1} />
         </div>
-
       </div>
+
+      {/* 어디에 올릴까요 — 허브 시트(가족 목록) ↔ 가족별 앨범 창 */}
+      {sheet != null ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40" onClick={() => setSheet(null)}>
+          <div
+            className="w-full max-w-md rounded-t-xl bg-bg px-5 pt-2.5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-ink/20" />
+            {sheet.step === 'hub' ? (
+              <>
+                <p className="font-serif text-base font-semibold text-ink">어디에 올릴까요?</p>
+                <p className="mt-1 mb-1 text-xs text-muted">가족을 누르면 담을 앨범을 골라요 · 여러 곳 선택 가능</p>
+                <div className="max-h-80 overflow-y-auto">
+                  {groups.data?.map((group) => (
+                    <HubRow
+                      key={group.id}
+                      group={group}
+                      target={targets[group.id]}
+                      onPress={() => setSheet({ step: 'album', groupId: group.id })}
+                      onClear={() =>
+                        setTargets((prev) => {
+                          const next = { ...prev };
+                          delete next[group.id];
+                          return next;
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={targetCount === 0}
+                  onClick={submit}
+                  className={cn(
+                    'mt-4 flex h-[50px] w-full items-center justify-center rounded-md font-serif text-[15px] font-semibold',
+                    targetCount === 0 ? 'bg-ink/[0.08] text-ink/35' : 'bg-accent text-white',
+                  )}
+                >
+                  {targetCount === 0 ? '올릴 곳을 골라주세요' : `${targetCount}개 공간에 ${files.length}장 올리기`}
+                </button>
+              </>
+            ) : sheetGroup ? (
+              <AlbumSheet
+                group={sheetGroup}
+                current={targets[sheetGroup.id]}
+                onPick={(albumId) => {
+                  setTargets((prev) => ({ ...prev, [sheetGroup.id]: { albumId } }));
+                  setSheet({ step: 'hub' });
+                }}
+                onBack={() => setSheet({ step: 'hub' })}
+                onUnselect={() => {
+                  setTargets((prev) => {
+                    const next = { ...prev };
+                    delete next[sheetGroup.id];
+                    return next;
+                  });
+                  setSheet({ step: 'hub' });
+                }}
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {lightboxSrc ? <Lightbox src={lightboxSrc} alt="선택한 사진" onClose={() => setLightboxSrc(null)} /> : null}
-    </div>
-  );
-}
-
-/** 한 그룹의 앨범 칩 — 앱 GroupTargetFields 와 동일 (선택 시 파란 외곽선) */
-function AlbumPicker({ groupId, value, onChange }: { groupId: string; value: string; onChange: (albumId: string) => void }) {
-  const albums = useAlbumsOf(groupId);
-  return (
-    <div className="flex flex-col gap-[5px]">
-      <p className="text-xs text-ink/70">어느 앨범에 담을까요?</p>
-      <div className="flex flex-wrap gap-2">
-        {albums.data && albums.data.length > 0 ? (
-          albums.data.map((a) => {
-            const selected = value === a.id;
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => onChange(selected ? '' : a.id)}
-                aria-pressed={selected}
-                className={cn('flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs', selected ? 'border-accent bg-accent-100 text-accent-800' : 'border-divider text-neutral-700')}
-              >
-                {a.title}
-              </button>
-            );
-          })
-        ) : (
-          <p className="text-[11px] text-muted">아직 앨범이 없어요. 미분류로 올라가요.</p>
-        )}
-      </div>
     </div>
   );
 }
