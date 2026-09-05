@@ -333,12 +333,6 @@ export function UploadScreen() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-[5px]">
-          <label htmlFor="upload-caption" className="text-xs text-ink/70">
-            설명
-          </label>
-          <Textarea id="upload-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 이야기를 적어보세요" maxLength={200} className="min-h-9" rows={1} />
-        </div>
       </div>
 
       {/* 어디에 올릴까요 — 허브 시트(가족 목록) ↔ 가족별 앨범 창 */}
@@ -371,6 +365,12 @@ export function UploadScreen() {
                       }
                     />
                   ))}
+                </div>
+                <div className="mt-3 mb-1 flex flex-col gap-[5px]">
+                  <label htmlFor="upload-caption" className="text-xs text-ink/70">
+                    설명 <span className="text-muted">(선택)</span>
+                  </label>
+                  <Textarea id="upload-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="사진에 담긴 이야기를 적어보세요" maxLength={200} className="min-h-9" rows={1} />
                 </div>
                 <button
                   type="button"
