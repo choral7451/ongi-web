@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronRight, Copy, Hash, LogOut, Pencil, Plus, Share2 } from 'lucide-react';
+import { CalendarDays, ChevronRight, Copy, Hash, LogOut, Pencil, Plus, Share2 } from 'lucide-react';
+import Link from 'next/link';
 import { NoGroupState } from '@/components/NoGroupState';
 import { REPORT_DONE_MESSAGE } from '@/components/photos/usePhotoActions';
 import { Avatar } from '@/components/ui/Avatar';
@@ -150,6 +151,13 @@ export function FamilyScreen() {
           </p>
         ) : null}
       </header>
+
+      {/* 가족 일정 — 일정은 가족 공간의 것이라 진입점도 가족 탭에 */}
+      <Link href="/schedule" className="mb-4 flex max-w-md items-center gap-2.5 rounded-md border border-divider px-3.5 py-3 hover:bg-neutral-100">
+        <CalendarDays className="h-[17px] w-[17px] text-accent" strokeWidth={1.75} />
+        <span className="flex-1 text-sm text-ink">가족 일정</span>
+        <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
+      </Link>
 
       <div className="grid gap-5 md:grid-cols-[1fr_320px] md:gap-8">
         <ul>
