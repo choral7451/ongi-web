@@ -280,10 +280,10 @@ export function ScheduleScreen() {
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40 md:items-center" onClick={() => setForm(null)}>
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-bg px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:rounded-xl md:pb-6" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="font-serif text-base font-semibold text-ink">{form.eventId ? '일정 수정' : '일정 만들기'}</h2>
-                {family.data?.name ? <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[11px] text-accent-800">{family.data.name}</span> : null}
-              </div>
+              <h2 className="font-serif text-base font-semibold text-ink">
+                {family.data?.name ? <span className="text-accent">{family.data.name} </span> : null}
+                {form.eventId ? '일정 수정' : '일정 만들기'}
+              </h2>
               <button type="button" aria-label="닫기" onClick={() => setForm(null)} className="rounded p-1 hover:bg-neutral-100">
                 <X className="h-4 w-4 text-ink" strokeWidth={1.75} />
               </button>
