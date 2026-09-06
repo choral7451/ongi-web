@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, ChevronRight, FileText, Mail, Pencil, ShieldCheck } from 'lucide-react';
+import { CalendarDays, Camera, ChevronRight, FileText, Mail, Pencil, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
@@ -100,7 +100,12 @@ export function ProfileScreen() {
         </dl>
       </div>
 
-      <SectionHeader title="약관 및 정책" size="sm" />
+      <SectionHeader title="가족" size="sm" />
+      <SettingRow icon={<CalendarDays className="h-[18px] w-[18px] text-neutral-600" strokeWidth={1.75} />} label="가족 일정" href="/schedule" />
+
+      <div className="mt-6">
+        <SectionHeader title="약관 및 정책" size="sm" />
+      </div>
       <SettingRow icon={<FileText className="h-[18px] w-[18px] text-neutral-600" strokeWidth={1.75} />} label="이용약관" href="/legal/terms" />
       <SettingRow icon={<ShieldCheck className="h-[18px] w-[18px] text-neutral-600" strokeWidth={1.75} />} label="개인정보 처리방침" href="/legal/privacy" />
       <SettingRow icon={<Mail className="h-[18px] w-[18px] text-neutral-600" strokeWidth={1.75} />} label="문의하기" meta={SUPPORT_EMAIL} href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('[온기] 문의')}`} />
