@@ -10,7 +10,9 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Spinner } from '@/components/ui/State';
 import { Tag } from '@/components/ui/Tag';
 import { useRouter } from 'next/navigation';
-import { useBlockMember, useCreateGroup, useFamily, useHasNoGroup, useJoinGroup, useLeaveGroup, useMembers, useRemoveMember, useRenameGroup, useReport, useUnblockMember } from '@/lib/queries';
+import { useState } from 'react';
+import { useBlockMember, useCreateGroup, useEventsRange, useFamily, useHasNoGroup, useJoinGroup, useLeaveGroup, useMembers, useRemoveMember, useRenameGroup, useReport, useUnblockMember } from '@/lib/queries';
+import { addDaysStr, ddayLabel, todayStr } from '@/lib/utils/calendar';
 import { useActiveGroupId, useSession } from '@/lib/store/session';
 import { buildInviteMessage } from '@/lib/utils/invite';
 import type { Member } from '@/types';
@@ -38,6 +40,11 @@ export function FamilyScreen() {
 
   const inviteCode = family.data?.inviteCode ?? '';
   const me = members.data?.find((m) => m.isMe);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  // 가족 일정 카드의 다가오는 일정 미리보기
+  const today = todayStr();
+  const upcomingEvents = useEventsRange(today, addDaysStr(today, 30));
+  const nextEvent = upcomingEvents.data?.[0];
   const leave = useLeaveGroup();
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
@@ -156,10 +163,12 @@ export function FamilyScreen() {
       <Link href="/schedule" className="mb-4 flex max-w-md items-center gap-2.5 rounded-md border border-divider px-3.5 py-3 hover:bg-neutral-100">
         <CalendarDays className="h-[17px] w-[17px] text-accent" strokeWidth={1.75} />
         <span className="flex-1 text-sm text-ink">가족 일정</span>
+        {nextEvent ? <span className="max-w-40 truncate text-xs text-muted">{`${nextEvent.title} ${ddayLabel(nextEvent.date)}`}</span> : null}
         <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
       </Link>
 
-      <div className="grid gap-5 md:grid-cols-[1fr_320px] md:gap-8">
+      <p className="mb-2 text-[11px] tracking-[1px] text-accent">구성원 {members.data?.length ?? 0}</p>
+      <div className="max-w-md overflow-hidden rounded-md border border-divider">
         <ul>
           {members.isPending ? (
             <Spinner />
@@ -168,7 +177,7 @@ export function FamilyScreen() {
               <li
                 key={member.id}
                 onClick={() => !member.isMe && openMemberActions(member)}
-                className={`flex items-center gap-3 border-b border-divider py-3 last:border-b-0 ${member.isMe ? '' : 'cursor-pointer hover:bg-neutral-100/60'}`}
+                className={`flex items-center gap-3 border-b border-divider px-3.5 py-3 ${member.isMe ? '' : 'cursor-pointer hover:bg-neutral-100/60'}`}
               >
                 <Avatar name={member.name} src={member.avatarUrl} size={40} pending={member.role === 'pending'} />
                 <div className="min-w-0 flex-1">
@@ -186,9 +195,18 @@ export function FamilyScreen() {
             ))
           )}
         </ul>
+        <button type="button" onClick={() => setInviteOpen(true)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left hover:bg-neutral-100">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-dashed border-accent-300">
+            <Plus className="h-[17px] w-[17px] text-accent" strokeWidth={1.75} />
+          </span>
+          <span className="flex-1 text-sm text-accent">가족 초대하기</span>
+          <ChevronRight className="h-[15px] w-[15px] text-neutral-400" strokeWidth={1.75} />
+        </button>
+      </div>
 
-        {inviteCode ? (
-          <aside className="flex h-fit flex-col items-center gap-[9px] rounded-md border border-divider p-[18px] text-center shadow-sm">
+      {/* 혼자인 새 공간은 초대가 다음 할 일 — 카드를 바로 펼쳐 보여준다 (그 외엔 시트로) */}
+      {inviteCode && othersCount === 0 ? (
+          <aside className="mt-4 flex max-w-md flex-col items-center gap-[9px] rounded-md border border-divider p-[18px] text-center shadow-sm">
             <p className="text-[10px] uppercase tracking-[1px] text-accent">가족 초대하기</p>
             <p className="font-serif text-[34px] leading-tight tracking-[2.7px] tabular-nums text-ink">{inviteCode}</p>
             <p className="text-[13px] leading-5 text-ink/80">
@@ -206,7 +224,6 @@ export function FamilyScreen() {
             </div>
           </aside>
         ) : null}
-      </div>
 
       {/* 헤더 드롭다운은 전환 전용 — 공간 관리는 설정 리스트 카드로 */}
       <div className="mt-8 flex max-w-md flex-col gap-2.5 md:mt-10">
@@ -240,6 +257,34 @@ export function FamilyScreen() {
           </button>
         </div>
       </div>
+
+      {/* 가족 초대하기 시트 */}
+      {inviteOpen ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40 md:items-center" onClick={() => setInviteOpen(false)}>
+          <div
+            className="flex w-full max-w-md flex-col items-center gap-[9px] rounded-t-xl bg-bg p-[18px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center md:rounded-xl md:pb-[18px]"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[10px] uppercase tracking-[1px] text-accent">가족 초대하기</p>
+            <p className="font-serif text-[34px] leading-tight tracking-[2.7px] tabular-nums text-ink">{inviteCode}</p>
+            <p className="text-[13px] leading-5 text-ink/80">
+              초대 코드는 {family.data?.inviteExpiresInDays ?? 7}일간 유효해요.
+              <br />
+              가족이 앱이나 웹에서 코드를 입력하면 바로 함께할 수 있어요.
+            </p>
+            <div className="mt-1.5 flex flex-wrap justify-center gap-2.5">
+              <Button variant="secondary" onClick={copyCode} icon={<Copy className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
+                코드 복사
+              </Button>
+              <Button onClick={shareCode} icon={<Share2 className="h-[15px] w-[15px]" strokeWidth={1.75} />}>
+                초대 코드 공유
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
