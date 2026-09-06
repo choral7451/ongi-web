@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Calendar, ChevronLeft, ChevronRight, Plus, RotateCw, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
@@ -56,8 +57,12 @@ export function ScheduleScreen() {
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
 
-  const [month, setMonth] = useState(monthOf(todayStr()));
-  const [selected, setSelected] = useState(todayStr());
+  // 배너에서 ?date= 로 들어오면 그 날짜부터 — 없으면 오늘
+  const searchParams = useSearchParams();
+  const paramDate = searchParams.get('date') ?? '';
+  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : todayStr();
+  const [month, setMonth] = useState(monthOf(initialDate));
+  const [selected, setSelected] = useState(initialDate);
   const [form, setForm] = useState<FormState | null>(null);
   const [detail, setDetail] = useState<FamilyEvent | null>(null);
 

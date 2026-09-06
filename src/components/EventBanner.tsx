@@ -16,7 +16,7 @@ export function EventBanner() {
   const rest = upcoming.length - 1;
 
   return (
-    <Link href="/schedule" className="mb-3.5 flex items-center gap-2 rounded-md bg-accent-100 px-3 py-2.5" aria-label="가족 일정 보기">
+    <Link href={`/schedule?date=${first.date}`} className="mb-3.5 flex items-center gap-2 rounded-md bg-accent-100 px-3 py-2.5" aria-label="가족 일정 보기">
       <CalendarDays className="h-[15px] w-[15px] shrink-0 text-accent-700" strokeWidth={1.75} />
       <span className="min-w-0 flex-1 truncate text-[12.5px] text-accent-900">
         <span className="font-semibold">{first.title}</span> {ddayLabel(first.date)}
