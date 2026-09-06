@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Input, Textarea } from '@/components/ui/Input';
-import { useCreateEvent, useDeleteEvent, useEventsRange, useMembers, useUpdateEvent } from '@/lib/queries';
+import { useCreateEvent, useDeleteEvent, useEventsRange, useFamily, useMembers, useUpdateEvent } from '@/lib/queries';
 import { cn } from '@/lib/utils/cn';
 import {
   REPEAT_LABELS,
@@ -52,6 +52,7 @@ const emptyForm = (date: string): FormState => ({
 export function ScheduleScreen() {
   const dialog = useDialog();
   const alertError = useAlertError();
+  const family = useFamily();
   const members = useMembers();
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
@@ -279,7 +280,10 @@ export function ScheduleScreen() {
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40 md:items-center" onClick={() => setForm(null)}>
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-bg px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:rounded-xl md:pb-6" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-serif text-base font-semibold text-ink">{form.eventId ? '일정 수정' : '일정 만들기'}</h2>
+              <div>
+                <h2 className="font-serif text-base font-semibold text-ink">{form.eventId ? '일정 수정' : '일정 만들기'}</h2>
+                {family.data?.name ? <p className="text-[11px] text-accent">{family.data.name}</p> : null}
+              </div>
               <button type="button" aria-label="닫기" onClick={() => setForm(null)} className="rounded p-1 hover:bg-neutral-100">
                 <X className="h-4 w-4 text-ink" strokeWidth={1.75} />
               </button>
