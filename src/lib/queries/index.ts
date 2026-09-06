@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { albumsApi, familyApi, groupsApi, photosApi, profileApi, reportsApi } from '@/lib/api';
+import { albumsApi, eventsApi, familyApi, groupsApi, photosApi, profileApi, reportsApi } from '@/lib/api';
 import type { UploadPayload } from '@/lib/api/photos';
 import { useActiveGroupId, useSession } from '@/lib/store/session';
 import type { Comment, Photo } from '@/types';
@@ -18,6 +18,7 @@ export const queryKeys = {
   unfiledPhotos: (groupId: string) => ['unfiledPhotos', groupId] as const,
   group: (groupId: string) => ['group', groupId] as const,
   members: (groupId: string) => ['members', groupId] as const,
+  events: (groupId: string) => ['events', groupId] as const,
   me: ['me'] as const,
   profileStats: ['profileStats'] as const,
   legal: (slug: string) => ['legal', slug] as const,
@@ -403,5 +404,43 @@ export function useUploadPhotos() {
       qc.invalidateQueries({ queryKey: queryKeys.myGroups });
       qc.invalidateQueries({ queryKey: queryKeys.profileStats });
     },
+  });
+}
+
+// ── 가족 일정 ──────────────────────────────────────────
+
+/** [from, to] 범위의 발생일 목록 — 달력 화면·홈 배너에서 사용 */
+export function useEventsRange(from: string, to: string) {
+  const groupId = useActiveGroupId();
+  return useQuery({
+    queryKey: [...queryKeys.events(groupId), from, to] as const,
+    queryFn: () => eventsApi.getEvents(groupId, from, to),
+    enabled: !!groupId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useCreateEvent() {
+  const queryClient = useQueryClient();
+  const groupId = useActiveGroupId();
+  return useMutation({
+    mutationFn: (payload: eventsApi.SaveEventPayload) => eventsApi.createEvent(groupId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+  });
+}
+
+export function useUpdateEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { eventId: string; payload: eventsApi.SaveEventPayload }) => eventsApi.updateEvent(params.eventId, params.payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+  });
+}
+
+export function useDeleteEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: eventsApi.deleteEvent,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
   });
 }

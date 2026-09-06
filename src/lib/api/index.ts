@@ -1,5 +1,6 @@
 export * as albumsApi from './albums';
 export * as authApi from './auth';
+export * as eventsApi from './events';
 export * as familyApi from './family';
 export * as groupsApi from './groups';
 export * as photosApi from './photos';

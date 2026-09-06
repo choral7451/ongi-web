@@ -3,7 +3,7 @@
 import { Check, ChevronDown, Home, Image as ImageIcon, Plus, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useActiveGroupSync, useMyGroups } from '@/lib/queries';
 import { useSession } from '@/lib/store/session';
@@ -27,6 +27,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   // ONGI 로고 + 가족 공간 선택 헤더 — 4개 탭 모두 상단 고정. 상세·모달 화면은 각자 헤더를 갖는다
   const showMobileHeader = ['/feed', '/albums', '/family', '/profile'].includes(pathname);
+
+  // 홈에서 스크롤을 내리면 헤더를 접고, 올리면 다시 보여준다 (앱 홈과 동일) — 다른 탭에선 표시 조건으로 무시
+  const [headerHidden, setHeaderHidden] = useState(false);
+  useEffect(() => {
+    if (pathname !== '/feed') return;
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setHeaderHidden(y > last && y > 40);
+      last = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-6xl">
@@ -62,7 +76,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {showMobileHeader ? (
-          <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-3.5 md:hidden">
+          <header
+            className={cn(
+              'sticky top-0 z-30 flex items-center justify-between gap-3 bg-bg px-5 pt-[calc(0.625rem+env(safe-area-inset-top))] pb-3.5 transition-transform duration-200 md:hidden',
+              headerHidden && pathname === '/feed' && '-translate-y-full',
+            )}
+          >
             <Link
               href="/feed"
               onClick={refreshFeed}

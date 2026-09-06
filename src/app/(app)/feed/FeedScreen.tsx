@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { EventBanner } from '@/components/EventBanner';
 import { FeedPost } from '@/components/feed/FeedPost';
 import { NoGroupState } from '@/components/NoGroupState';
 import { LoadMoreSentinel } from '@/components/ui/LoadMoreSentinel';
@@ -36,6 +37,7 @@ export function FeedScreen() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      <EventBanner />
       {feed.isPending ? (
         <Spinner />
       ) : feed.isError ? (
