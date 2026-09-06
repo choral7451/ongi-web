@@ -23,7 +23,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   // 로고 클릭 → 홈으로 이동하며 피드 새로고침
-  const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const refreshFeed = () => {
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   // ONGI 로고 + 가족 공간 선택 헤더 — 4개 탭 모두 상단 고정. 상세·모달 화면은 각자 헤더를 갖는다
   const showMobileHeader = ['/feed', '/albums', '/family', '/profile'].includes(pathname);
@@ -128,7 +132,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /** 가족 공간 드롭다운(전환 전용 — 만들기·참여는 가족 탭)과 ONGI 로고(→ 홈) */
 function GroupSwitcher({ compact = false }: { compact?: boolean }) {
   const queryClient = useQueryClient();
-  const refreshFeed = () => queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const refreshFeed = () => {
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const groups = useMyGroups();
   const activeGroupId = useSession((s) => s.activeGroupId);
   const setActiveGroup = useSession((s) => s.setActiveGroup);
