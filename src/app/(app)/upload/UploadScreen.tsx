@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Video as VideoIcon, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Play, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { useEffect, useRef, useState } from 'react';
@@ -207,31 +207,29 @@ export function UploadScreen() {
   const [sheet, setSheet] = useState<null | { step: 'hub' } | { step: 'album'; groupId: string }>(null);
   const queryClient = useQueryClient();
 
-  // 영상은 한 번에 1개, 사진과 동시 게시 불가 (하나를 고르면 다른 쪽은 초기화)
-  const [video, setVideo] = useState<{ file: File; durationSeconds: number; aspectRatio: number; posterBlob: Blob | null; posterUrl: string | null } | null>(null);
+  // 같은 그리드에서 사진·영상 함께 선택 — 영상은 여러 개 가능, 게시 시 순차 업로드
+  const [videos, setVideos] = useState<{ file: File; durationSeconds: number; aspectRatio: number; posterBlob: Blob | null; posterUrl: string | null }[]>([]);
   const [videoUploading, setVideoUploading] = useState(false);
 
-  const clearVideo = () => {
-    setVideo((prev) => {
-      if (prev?.posterUrl) URL.revokeObjectURL(prev.posterUrl);
-      return null;
+  const removeVideo = (index: number) =>
+    setVideos((prev) => {
+      const target = prev[index];
+      if (target?.posterUrl) URL.revokeObjectURL(target.posterUrl);
+      return prev.filter((_, i) => i !== index);
     });
-  };
 
-  const addVideo = async (list: FileList | null) => {
-    const file = list?.[0];
-    if (!file) return;
-    try {
-      const meta = await readVideo(file);
-      if (meta.durationSeconds > VIDEO_MAX_DURATION) {
-        await dialog.alert('길이 제한', '영상은 최대 5분까지 올릴 수 있어요. 잘라서 올려주세요.');
-        return;
+  const addVideos = async (picked: File[]) => {
+    for (const file of picked) {
+      try {
+        const meta = await readVideo(file);
+        if (meta.durationSeconds > VIDEO_MAX_DURATION) {
+          await dialog.alert('길이 제한', `영상은 최대 5분까지 올릴 수 있어요. (${file.name})`);
+          continue;
+        }
+        setVideos((prev) => [...prev, { file, ...meta, posterUrl: meta.posterBlob ? URL.createObjectURL(meta.posterBlob) : null }]);
+      } catch (e) {
+        alertError('영상 불러오기 실패')(e);
       }
-      setFiles([]);
-      clearVideo();
-      setVideo({ file, ...meta, posterUrl: meta.posterBlob ? URL.createObjectURL(meta.posterBlob) : null });
-    } catch (e) {
-      alertError('영상 불러오기 실패')(e);
     }
   };
 
@@ -271,14 +269,16 @@ export function UploadScreen() {
 
   const addFiles = async (list: FileList | null) => {
     if (!list) return;
-    if (video) clearVideo();
+    const all = Array.from(list);
     // 같은 파일을 두 번 고르면 한 번만 (키 충돌·중복 업로드 방지)
     const keyOf = (f: File) => `${f.name}-${f.size}-${f.lastModified}`;
     const seen = new Set(files.map(keyOf));
-    const picked = Array.from(list).filter((f) => f.type.startsWith('image/') && !seen.has(keyOf(f)) && (seen.add(keyOf(f)), true));
+    const picked = all.filter((f) => f.type.startsWith('image/') && !seen.has(keyOf(f)) && (seen.add(keyOf(f)), true));
     const next = [...files, ...picked].slice(0, MAX_FILES);
     if (files.length + picked.length > MAX_FILES) await dialog.alert('선택 한도', `한 번에 ${MAX_FILES}장까지 올릴 수 있어요. 나눠서 올려주세요.`);
     setFiles(next);
+    const videoKeys = new Set(videos.map((v) => keyOf(v.file)));
+    await addVideos(all.filter((f) => f.type.startsWith('video/') && !videoKeys.has(keyOf(f))));
   };
 
   /** 올리기 버튼 → 허브 시트 열기 (지난 업로드의 선택을 기본값으로) */
@@ -296,29 +296,52 @@ export function UploadScreen() {
   const targetCount = Object.keys(targets).length;
 
   const submit = () => {
-    if ((files.length === 0 && !video) || targetCount === 0) return;
+    if ((files.length === 0 && videos.length === 0) || targetCount === 0) return;
     saveLastTargets(targets);
     setSheet(null);
-    if (video) {
-      setVideoUploading(true);
-      uploadVideo({
-        file: video.file,
-        durationSeconds: video.durationSeconds,
-        aspectRatio: video.aspectRatio,
-        posterBlob: video.posterBlob,
-        caption: caption.trim() || undefined,
-        targets: Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId })),
-      })
-        .then(async () => {
-          await queryClient.invalidateQueries({ queryKey: ['feed'] });
-          await dialog.alert('올리기 완료', '영상을 올렸어요.');
-          router.push('/feed');
-        })
-        .catch(alertError('영상 올리기 실패'))
-        .finally(() => setVideoUploading(false));
+    if (videos.length === 0) {
+      runUpload(files, true);
       return;
     }
-    runUpload(files, true);
+    void runVideoUploads();
+  };
+
+  /** 선택된 영상들을 순서대로 올리고, 사진이 남아 있으면 이어서 올린다 */
+  const runVideoUploads = async () => {
+    const mappedTargets = Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId }));
+    setVideoUploading(true);
+    setProgress({ done: 0, total: videos.length });
+    let failed = 0;
+    for (let i = 0; i < videos.length; i += 1) {
+      const v = videos[i];
+      try {
+        await uploadVideo({
+          file: v.file,
+          durationSeconds: v.durationSeconds,
+          aspectRatio: v.aspectRatio,
+          posterBlob: v.posterBlob,
+          // 문구는 전체 업로드의 첫 게시물에만 — 사진이 함께면 사진 쪽(runUpload)에 붙는다
+          caption: files.length === 0 && i === 0 ? caption.trim() || undefined : undefined,
+          targets: mappedTargets,
+        });
+      } catch {
+        failed += 1;
+      } finally {
+        setProgress({ done: i + 1, total: videos.length });
+      }
+    }
+    setVideoUploading(false);
+    setProgress(null);
+    await queryClient.invalidateQueries({ queryKey: ['feed'] });
+    if (failed > 0) await dialog.alert('일부 영상을 올리지 못했어요', `영상 ${videos.length - failed}개 성공, ${failed}개 실패`);
+    if (files.length > 0) {
+      runUpload(files, true);
+      return;
+    }
+    if (failed === 0) {
+      await dialog.alert('올리기 완료', `영상 ${videos.length}개를 올렸어요.`);
+      router.push('/feed');
+    }
   };
 
   /** 넘긴 파일만 올린다 — 실패분 재시도에도 그대로 쓴다 (문구는 첫 업로드에만) */
@@ -386,50 +409,36 @@ export function UploadScreen() {
         <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <Button onClick={openTargetSheet} disabled={(files.length === 0 && !video) || upload.isPending || videoUploading} className="relative">
-          {upload.isPending || videoUploading ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : video ? '영상 올리기' : files.length > 0 ? `${files.length}장 올리기` : '올리기'}
+        <Button onClick={openTargetSheet} disabled={(files.length === 0 && videos.length === 0) || upload.isPending || videoUploading} className="relative">
+          {upload.isPending || videoUploading
+            ? progress
+              ? `올리는 중 ${progress.done}/${progress.total}`
+              : '올리는 중…'
+            : files.length + videos.length > 0
+              ? `${files.length + videos.length}${videos.length > 0 ? '개' : '장'} 올리기`
+              : '올리기'}
         </Button>
       </div>
 
       <div className="flex flex-col gap-4">
         <div>
-          {/* 동영상 — 1개 선택, 브라우저에서 포스터 추출 */}
-          {video ? (
-            <div className="mb-3 flex items-center gap-3 rounded-md border border-accent p-2.5">
-              {video.posterUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={video.posterUrl} alt="영상 미리보기" className="h-14 w-[84px] rounded object-cover" />
-              ) : (
-                <span className="h-14 w-[84px] rounded bg-neutral-300" />
-              )}
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-sm text-ink">동영상 1개</span>
-                <span className="text-[11px] tabular-nums text-muted">
-                  {Math.floor(video.durationSeconds / 60)}:{String(video.durationSeconds % 60).padStart(2, '0')}
-                </span>
-              </span>
-              <button type="button" onClick={clearVideo} aria-label="동영상 제외" className="p-1.5 text-ink">
-                <X className="h-4 w-4" strokeWidth={1.75} />
-              </button>
-            </div>
-          ) : (
-            <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-md border border-divider px-3.5 py-2.5 hover:bg-neutral-100">
-              <VideoIcon className="h-4 w-4 text-accent" strokeWidth={1.75} />
-              <span className="flex-1 text-sm text-accent">동영상 올리기</span>
-              <span className="text-[11px] text-muted">최대 5분 · 1개</span>
-              <input
-                type="file"
-                accept="video/*"
-                className="hidden"
-                onChange={(e) => {
-                  void addVideo(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-            </label>
-          )}
-          <SectionHeader title="올릴 사진을 골라주세요" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
+          <SectionHeader title="올릴 사진·영상을 골라주세요" size="sm" meta={files.length + videos.length > 0 ? `${files.length + videos.length}개 선택됨` : undefined} />
           <div className="grid grid-cols-3 gap-2">
+            {videos.map((v, i) => (
+              <div key={`${v.file.name}-${v.file.size}-${v.file.lastModified}`} className="relative overflow-hidden bg-neutral-900" style={{ aspectRatio: 1 }}>
+                {v.posterUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={v.posterUrl} alt={`선택한 영상 ${i + 1}`} className="h-full w-full object-cover" />
+                ) : null}
+                <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-ink/60 px-1.5 py-0.5 text-[10px] tabular-nums text-white">
+                  <Play className="h-2.5 w-2.5" strokeWidth={1.75} fill="currentColor" />
+                  {Math.floor(v.durationSeconds / 60)}:{String(v.durationSeconds % 60).padStart(2, '0')}
+                </span>
+                <button type="button" onClick={() => removeVideo(i)} aria-label="영상 제외" className="absolute top-1 right-1 rounded-full bg-ink/70 p-1 text-white">
+                  <X className="h-3 w-3" strokeWidth={2} />
+                </button>
+              </div>
+            ))}
             {previews.map((p, i) => (
               <div key={`${p.file.name}-${p.file.size}-${p.file.lastModified}`} className="relative overflow-hidden bg-neutral-200" style={{ aspectRatio: 1 }}>
                 {/* 로컬 미리보기(blob:)는 next/image 최적화 대상이 아니다 */}
@@ -446,8 +455,19 @@ export function UploadScreen() {
             {files.length < MAX_FILES ? (
               <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed border-divider text-xs text-muted hover:bg-neutral-100" style={{ aspectRatio: 1 }}>
                 <ImagePlus className="h-6 w-6 text-accent" strokeWidth={1.5} />
-                사진 선택
-                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+                사진·영상 선택
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const input = e.currentTarget;
+                    void addFiles(input.files).finally(() => {
+                      input.value = '';
+                    });
+                  }}
+                />
               </label>
             ) : null}
           </div>
@@ -501,7 +521,7 @@ export function UploadScreen() {
                     targetCount === 0 ? 'bg-ink/[0.08] text-ink/35' : 'bg-accent text-white',
                   )}
                 >
-                  {targetCount === 0 ? '올릴 곳을 골라주세요' : video ? `${targetCount}개 공간에 영상 올리기` : `${targetCount}개 공간에 ${files.length}장 올리기`}
+                  {targetCount === 0 ? '올릴 곳을 골라주세요' : `${targetCount}개 공간에 ${files.length + videos.length}${videos.length > 0 ? '개' : '장'} 올리기`}
                 </button>
               </>
             ) : sheetGroup ? (
