@@ -142,6 +142,29 @@ export function PhotoDetailScreen({ id }: { id: string }) {
         <ErrorState message="사진을 불러오지 못했어요." onRetry={() => photo.refetch()} />
       ) : (
         <>
+          {photo.data.mediaType === 'video' ? (
+            <div className="relative overflow-hidden bg-ink" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
+              <video
+                key={photo.data.url}
+                src={photo.data.url}
+                poster={photo.data.thumbUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-contain"
+              />
+              {prev ? (
+                <button type="button" onClick={() => navTo(prev.id)} aria-label="이전 사진" className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white">
+                  <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
+                </button>
+              ) : null}
+              {next ? (
+                <button type="button" onClick={() => navTo(next.id)} aria-label="다음 사진" className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white">
+                  <ChevronRight className="h-5 w-5" strokeWidth={1.75} />
+                </button>
+              ) : null}
+            </div>
+          ) : (
           <div
             className="relative cursor-zoom-in overflow-hidden bg-accent-100 transition-[aspect-ratio] duration-200"
             style={{ aspectRatio: photo.data.aspectRatio || 1 }}
@@ -173,6 +196,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
               </button>
             ) : null}
           </div>
+          )}
 
           <div className="flex items-center gap-2.5 border-b border-divider py-3.5">
             <Avatar name={author?.name ?? '?'} src={author?.avatarUrl} />

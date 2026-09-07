@@ -126,3 +126,40 @@ export async function uploadPhotos(payload: UploadPayload): Promise<UploadResult
 
   return { photos, failedFiles, errorMessage };
 }
+
+/** 영상 길이 한도(초) — 5분 */
+export const VIDEO_MAX_DURATION = 300;
+
+export interface VideoUploadPayload {
+  file: File;
+  durationSeconds: number;
+  aspectRatio: number;
+  /** 피드·목록용 포스터(jpeg) — 없으면 썸네일 없이 올라간다 */
+  posterBlob: Blob | null;
+  caption?: string;
+  targets: UploadTarget[];
+}
+
+/** 영상 올리기 — 영상은 변환 없이 그대로, 포스터를 함께 올려 썸네일로 쓴다 (앱 uploadVideo 와 동일한 프로토콜) */
+export async function uploadVideo(payload: VideoUploadPayload): Promise<void> {
+  const extension = payload.file.name.split('.').pop()?.toLowerCase() ?? 'mp4';
+  const form = new FormData();
+  form.append('photoFiles', payload.file, `video-1.${extension}`);
+  if (payload.posterBlob) form.append('photoFiles', payload.posterBlob, 'poster-1.jpg');
+  const uploaded = await postForm<{ urls: string[]; thumbUrls?: (string | null)[] }>('/ongi/photos/files', form);
+  const [videoUrl, posterUrl] = uploaded.urls;
+  const posterThumb = uploaded.thumbUrls?.[1] ?? null;
+  await post<{ photos: Photo[] }>('/ongi/photos', {
+    photos: [
+      {
+        url: videoUrl,
+        thumbUrl: posterThumb ?? posterUrl ?? undefined,
+        aspectRatio: payload.aspectRatio,
+        mediaType: 'video',
+        durationSeconds: payload.durationSeconds,
+      },
+    ],
+    caption: payload.caption,
+    targets: payload.targets.map((t) => ({ groupId: t.groupId, albumId: t.albumId, personIds: [] })),
+  });
+}

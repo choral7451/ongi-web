@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
@@ -25,6 +25,14 @@ export function FeedPost({ photo, author, album }: FeedPostProps) {
     <article className="flex flex-col gap-2.5">
       <Link href={href} className="relative block w-full overflow-hidden bg-accent-100" style={{ aspectRatio: photo.aspectRatio || 1 }}>
         <Image src={photo.thumbUrl ?? photo.url} alt={photo.caption ?? '가족 사진'} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+        {photo.mediaType === 'video' ? (
+          <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-ink/60 px-2 py-1 text-[11px] tabular-nums text-white">
+            <Play className="h-[11px] w-[11px]" strokeWidth={1.75} fill="currentColor" />
+            {photo.durationSeconds
+              ? `${Math.floor(photo.durationSeconds / 60)}:${String(photo.durationSeconds % 60).padStart(2, '0')}`
+              : null}
+          </span>
+        ) : null}
       </Link>
 
       <div className="flex items-center gap-2.5">

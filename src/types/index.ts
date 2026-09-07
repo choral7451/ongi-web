@@ -62,6 +62,10 @@ export interface Photo {
   thumbUrl?: string;
   /** 세로 비율 힌트 (width/height) — 피드 레이아웃용 */
   aspectRatio: number;
+  /** 'video' 면 url 은 영상, thumbUrl 은 포스터 이미지 */
+  mediaType?: 'photo' | 'video';
+  /** 영상 길이(초) — mediaType 'video' 일 때만 */
+  durationSeconds?: number;
   authorId: string;
   albumId?: string;
   caption?: string;

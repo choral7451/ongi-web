@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Video as VideoIcon, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { albumsApi } from '@/lib/api';
 import { useAlbumsOf, useHasNoGroup, useMyGroups, useUploadPhotos } from '@/lib/queries';
-import { UPLOAD_MAX_SELECT } from '@/lib/api/photos';
+import { UPLOAD_MAX_SELECT, VIDEO_MAX_DURATION, uploadVideo } from '@/lib/api/photos';
 import { cn } from '@/lib/utils/cn';
 import { makeThumbnail } from '@/lib/utils/image';
 import type { Group } from '@/types';
@@ -40,6 +40,42 @@ const saveLastTargets = (targets: Targets) => {
     /* 저장 실패는 무시 — 다음에 다시 고르면 된다 */
   }
 };
+
+/** 브라우저에서 영상 메타데이터와 포스터(0.5초 지점 프레임)를 뽑는다 */
+const readVideo = (file: File) =>
+  new Promise<{ durationSeconds: number; aspectRatio: number; posterBlob: Blob | null }>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    const done = (posterBlob: Blob | null) => {
+      URL.revokeObjectURL(url);
+      resolve({
+        durationSeconds: Math.max(Math.round(v.duration), 1),
+        aspectRatio: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9,
+        posterBlob,
+      });
+    };
+    v.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('영상 파일을 읽지 못했어요. 다른 파일로 시도해 주세요.'));
+    };
+    v.onloadedmetadata = () => {
+      v.currentTime = Math.min(0.5, v.duration / 2);
+    };
+    v.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth;
+        canvas.height = v.videoHeight;
+        canvas.getContext('2d')?.drawImage(v, 0, 0);
+        canvas.toBlob((blob) => done(blob), 'image/jpeg', 0.85);
+      } catch {
+        done(null);
+      }
+    };
+    v.src = url;
+  });
 
 /** 허브 시트의 가족 한 줄 — 선택되면 담을 앨범 이름을 보여준다 */
 function HubRow({
@@ -169,6 +205,35 @@ export function UploadScreen() {
   const [caption, setCaption] = useState('');
   const [targets, setTargets] = useState<Targets>({});
   const [sheet, setSheet] = useState<null | { step: 'hub' } | { step: 'album'; groupId: string }>(null);
+  const queryClient = useQueryClient();
+
+  // 영상은 한 번에 1개, 사진과 동시 게시 불가 (하나를 고르면 다른 쪽은 초기화)
+  const [video, setVideo] = useState<{ file: File; durationSeconds: number; aspectRatio: number; posterBlob: Blob | null; posterUrl: string | null } | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  const clearVideo = () => {
+    setVideo((prev) => {
+      if (prev?.posterUrl) URL.revokeObjectURL(prev.posterUrl);
+      return null;
+    });
+  };
+
+  const addVideo = async (list: FileList | null) => {
+    const file = list?.[0];
+    if (!file) return;
+    try {
+      const meta = await readVideo(file);
+      if (meta.durationSeconds > VIDEO_MAX_DURATION) {
+        await dialog.alert('길이 제한', '영상은 최대 5분까지 올릴 수 있어요. 잘라서 올려주세요.');
+        return;
+      }
+      setFiles([]);
+      clearVideo();
+      setVideo({ file, ...meta, posterUrl: meta.posterBlob ? URL.createObjectURL(meta.posterBlob) : null });
+    } catch (e) {
+      alertError('영상 불러오기 실패')(e);
+    }
+  };
 
   // 파일별 썸네일 URL 캐시 — 한 장을 빼도 나머지는 다시 디코딩하지 않는다 (이전엔 전체 재생성으로 수 초 멈춤)
   const thumbCache = useRef(new Map<File, string>());
@@ -206,6 +271,7 @@ export function UploadScreen() {
 
   const addFiles = async (list: FileList | null) => {
     if (!list) return;
+    if (video) clearVideo();
     // 같은 파일을 두 번 고르면 한 번만 (키 충돌·중복 업로드 방지)
     const keyOf = (f: File) => `${f.name}-${f.size}-${f.lastModified}`;
     const seen = new Set(files.map(keyOf));
@@ -230,9 +296,28 @@ export function UploadScreen() {
   const targetCount = Object.keys(targets).length;
 
   const submit = () => {
-    if (files.length === 0 || targetCount === 0) return;
+    if ((files.length === 0 && !video) || targetCount === 0) return;
     saveLastTargets(targets);
     setSheet(null);
+    if (video) {
+      setVideoUploading(true);
+      uploadVideo({
+        file: video.file,
+        durationSeconds: video.durationSeconds,
+        aspectRatio: video.aspectRatio,
+        posterBlob: video.posterBlob,
+        caption: caption.trim() || undefined,
+        targets: Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId })),
+      })
+        .then(async () => {
+          await queryClient.invalidateQueries({ queryKey: ['feed'] });
+          await dialog.alert('올리기 완료', '영상을 올렸어요.');
+          router.push('/feed');
+        })
+        .catch(alertError('영상 올리기 실패'))
+        .finally(() => setVideoUploading(false));
+      return;
+    }
     runUpload(files, true);
   };
 
@@ -274,12 +359,12 @@ export function UploadScreen() {
   const sheetGroup = sheet?.step === 'album' ? groups.data?.find((g) => g.id === sheet.groupId) : undefined;
 
   return (
-    <div className="mx-auto max-w-2xl" aria-busy={upload.isPending}>
-      {upload.isPending ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/85" role="status" aria-live="polite" aria-label="사진 올리는 중">
+    <div className="mx-auto max-w-2xl" aria-busy={upload.isPending || videoUploading}>
+      {upload.isPending || videoUploading ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/85" role="status" aria-live="polite" aria-label="올리는 중">
           <div className="flex min-w-56 flex-col items-center gap-2.5 rounded-xl border border-divider bg-bg px-7 py-6 shadow-sm">
             <Loader2 className="h-7 w-7 animate-spin text-accent" />
-            <p className="font-serif text-base font-semibold text-ink">사진을 올리고 있어요</p>
+            <p className="font-serif text-base font-semibold text-ink">{videoUploading ? '영상을 올리고 있어요' : '사진을 올리고 있어요'}</p>
             {progress ? (
               <>
                 <p className="text-[22px] tabular-nums text-accent-700">
@@ -301,13 +386,48 @@ export function UploadScreen() {
         <button type="button" onClick={() => router.back()} aria-label="닫기" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-neutral-100">
           <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
-        <Button onClick={openTargetSheet} disabled={files.length === 0 || upload.isPending} className="relative">
-          {upload.isPending ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : files.length > 0 ? `${files.length}장 올리기` : '올리기'}
+        <Button onClick={openTargetSheet} disabled={(files.length === 0 && !video) || upload.isPending || videoUploading} className="relative">
+          {upload.isPending || videoUploading ? (progress ? `올리는 중 ${progress.done}/${progress.total}` : '올리는 중…') : video ? '영상 올리기' : files.length > 0 ? `${files.length}장 올리기` : '올리기'}
         </Button>
       </div>
 
       <div className="flex flex-col gap-4">
         <div>
+          {/* 동영상 — 1개 선택, 브라우저에서 포스터 추출 */}
+          {video ? (
+            <div className="mb-3 flex items-center gap-3 rounded-md border border-accent p-2.5">
+              {video.posterUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={video.posterUrl} alt="영상 미리보기" className="h-14 w-[84px] rounded object-cover" />
+              ) : (
+                <span className="h-14 w-[84px] rounded bg-neutral-300" />
+              )}
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-sm text-ink">동영상 1개</span>
+                <span className="text-[11px] tabular-nums text-muted">
+                  {Math.floor(video.durationSeconds / 60)}:{String(video.durationSeconds % 60).padStart(2, '0')}
+                </span>
+              </span>
+              <button type="button" onClick={clearVideo} aria-label="동영상 제외" className="p-1.5 text-ink">
+                <X className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            </div>
+          ) : (
+            <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-md border border-divider px-3.5 py-2.5 hover:bg-neutral-100">
+              <VideoIcon className="h-4 w-4 text-accent" strokeWidth={1.75} />
+              <span className="flex-1 text-sm text-accent">동영상 올리기</span>
+              <span className="text-[11px] text-muted">최대 5분 · 1개</span>
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  void addVideo(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          )}
           <SectionHeader title="올릴 사진을 골라주세요" size="sm" meta={files.length > 0 ? `${files.length} / ${MAX_FILES}장 선택됨` : undefined} />
           <div className="grid grid-cols-3 gap-2">
             {previews.map((p, i) => (
@@ -381,7 +501,7 @@ export function UploadScreen() {
                     targetCount === 0 ? 'bg-ink/[0.08] text-ink/35' : 'bg-accent text-white',
                   )}
                 >
-                  {targetCount === 0 ? '올릴 곳을 골라주세요' : `${targetCount}개 공간에 ${files.length}장 올리기`}
+                  {targetCount === 0 ? '올릴 곳을 골라주세요' : video ? `${targetCount}개 공간에 영상 올리기` : `${targetCount}개 공간에 ${files.length}장 올리기`}
                 </button>
               </>
             ) : sheetGroup ? (
