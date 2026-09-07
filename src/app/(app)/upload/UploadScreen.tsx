@@ -310,7 +310,8 @@ export function UploadScreen() {
   const runVideoUploads = async () => {
     const mappedTargets = Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId }));
     setVideoUploading(true);
-    setProgress({ done: 0, total: videos.length });
+    // 진행률은 영상+사진 전체 기준 — 사진 단계는 offset 으로 이어 센다
+    setProgress({ done: 0, total: videos.length + files.length });
     let failed = 0;
     for (let i = 0; i < videos.length; i += 1) {
       const v = videos[i];
@@ -327,15 +328,15 @@ export function UploadScreen() {
       } catch {
         failed += 1;
       } finally {
-        setProgress({ done: i + 1, total: videos.length });
+        setProgress({ done: i + 1, total: videos.length + files.length });
       }
     }
     setVideoUploading(false);
-    setProgress(null);
+    if (files.length === 0) setProgress(null);
     await queryClient.invalidateQueries({ queryKey: ['feed'] });
     if (failed > 0) await dialog.alert('일부 영상을 올리지 못했어요', `영상 ${videos.length - failed}개 성공, ${failed}개 실패`);
     if (files.length > 0) {
-      runUpload(files, true);
+      runUpload(files, true, videos.length);
       return;
     }
     if (failed === 0) {
@@ -345,13 +346,13 @@ export function UploadScreen() {
   };
 
   /** 넘긴 파일만 올린다 — 실패분 재시도에도 그대로 쓴다 (문구는 첫 업로드에만) */
-  const runUpload = (targetFiles: File[], withCaption: boolean) => {
+  const runUpload = (targetFiles: File[], withCaption: boolean, progressOffset = 0) => {
     upload.mutate(
       {
         files: targetFiles,
         caption: withCaption ? caption.trim() || undefined : undefined,
         targets: Object.entries(targets).map(([groupId, target]) => ({ groupId, albumId: target.albumId })),
-        onProgress: (done, total) => setProgress({ done, total }),
+        onProgress: (done, total) => setProgress({ done: progressOffset + done, total: progressOffset + total }),
       },
       {
         onSettled: () => setProgress(null),
