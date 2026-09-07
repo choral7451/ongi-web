@@ -10,6 +10,8 @@ export function Lightbox({ src, alt, onClose }: { src: string; alt?: string; onC
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState('50% 50%');
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // 드래그 중 여부 — 렌더(트랜지션 클래스 토글)에 쓰이므로 ref 가 아니라 state 로 둔다
+  const [dragging, setDragging] = useState(false);
   const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function Lightbox({ src, alt, onClose }: { src: string; alt?: string; onC
     if (!zoomed) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y, moved: false };
+    setDragging(true);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drag.current) return;
@@ -47,6 +50,7 @@ export function Lightbox({ src, alt, onClose }: { src: string; alt?: string; onC
     setOffset({ x: drag.current.baseX + dx, y: drag.current.baseY + dy });
   };
   const onPointerUp = () => {
+    setDragging(false);
     // moved 플래그는 click(토글)이 먼저 읽도록 다음 틱에 해제
     setTimeout(() => {
       drag.current = null;
@@ -59,7 +63,7 @@ export function Lightbox({ src, alt, onClose }: { src: string; alt?: string; onC
       <img
         src={src}
         alt={alt ?? '사진'}
-        className={`max-h-full max-w-full select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'} ${drag.current ? '' : 'transition-transform duration-200'}`}
+        className={`max-h-full max-w-full select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'} ${dragging ? '' : 'transition-transform duration-200'}`}
         style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoomed ? ZOOM : 1})`, transformOrigin: origin, touchAction: 'none' }}
         onClick={(e) => {
           e.stopPropagation();
