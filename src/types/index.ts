@@ -95,6 +95,13 @@ export interface ProfileStats {
 /** 신고 대상 종류 */
 export type ReportTargetType = 'photo' | 'comment' | 'member';
 
+/** 한국 공휴일 (서버 규칙 계산 — 대체공휴일·임시공휴일 포함) */
+export interface Holiday {
+  /** 양력 YYYY-MM-DD */
+  date: string;
+  name: string;
+}
+
 /** 가족 일정 — date 는 이 발생일(양력). 반복 일정은 발생일마다 한 건씩 내려온다 */
 export interface FamilyEvent {
   id: string;

@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Input, Textarea } from '@/components/ui/Input';
-import { useCreateEvent, useDeleteEvent, useEventsRange, useFamily, useMembers, useUpdateEvent } from '@/lib/queries';
+import { useCreateEvent, useDeleteEvent, useEventsRange, useFamily, useHolidays, useMembers, useUpdateEvent } from '@/lib/queries';
 import { cn } from '@/lib/utils/cn';
 import {
   REPEAT_LABELS,
@@ -70,6 +70,9 @@ export function ScheduleScreen() {
   const events = useEventsRange(`${month}-01`, lastDayOf(month));
   const marked = useMemo(() => new Set((events.data ?? []).map((e) => e.date)), [events.data]);
   const dayEvents = useMemo(() => (events.data ?? []).filter((e) => e.date === selected), [events.data, selected]);
+  const holidays = useHolidays(Number(month.slice(0, 4)));
+  const holidayDates = useMemo(() => new Set((holidays.data ?? []).map((h) => h.date)), [holidays.data]);
+  const dayHolidays = useMemo(() => (holidays.data ?? []).filter((h) => h.date === selected), [holidays.data, selected]);
 
   const me = members.data?.find((m) => m.isMe);
   const allUserIds = useMemo(() => (members.data ?? []).map((m) => m.userId), [members.data]);
@@ -175,7 +178,9 @@ export function ScheduleScreen() {
                 <span
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full text-sm tabular-nums',
-                    date === selected ? 'bg-accent text-white' : date === today ? 'bg-accent-100 text-ink' : di === 0 ? 'text-danger' : 'text-ink',
+                    date === selected
+                      ? 'bg-accent text-white'
+                      : cn(date === today && 'bg-accent-100', di === 0 || holidayDates.has(date) ? 'text-danger' : 'text-ink'),
                   )}
                 >
                   {Number(date.slice(8))}
@@ -190,7 +195,14 @@ export function ScheduleScreen() {
       <div className="mt-3 mb-3.5 h-px bg-accent-300" />
       <p className="mb-1 text-[11px] tracking-widest text-accent">{formatKoreanDate(selected)}</p>
 
-      {dayEvents.length === 0 ? (
+      {dayHolidays.map((holiday) => (
+        <div key={`${holiday.date}-${holiday.name}`} className="flex items-center gap-2 border-b border-divider py-3">
+          <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+          <span className="flex-1 text-sm text-ink">{holiday.name}</span>
+          <span className="text-[11px] text-danger">공휴일</span>
+        </div>
+      ))}
+      {dayEvents.length === 0 && dayHolidays.length === 0 ? (
         <p className="py-6 text-center text-[13px] text-muted">이 날엔 일정이 없어요</p>
       ) : (
         dayEvents.map((event) => (
