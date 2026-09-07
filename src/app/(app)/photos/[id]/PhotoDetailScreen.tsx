@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Heart, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, MoreHorizontal, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -110,6 +110,9 @@ export function PhotoDetailScreen({ id }: { id: string }) {
   const [shown, setShown] = useState<{ url: string; aspectRatio: number } | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  // 영상: 처음엔 포스터+중앙 ▶ 만 보이고, 누르면 재생 시작 (URL 별로 초기화)
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const incomingLoaded = loadedUrl === photo.data?.url;
   const commitIncoming = () => {
     if (!photo.data) return;
@@ -145,6 +148,7 @@ export function PhotoDetailScreen({ id }: { id: string }) {
           {photo.data.mediaType === 'video' ? (
             <div className="relative overflow-hidden bg-ink" style={{ aspectRatio: photo.data.aspectRatio || 1 }}>
               <video
+                ref={videoRef}
                 key={photo.data.url}
                 src={photo.data.url}
                 poster={photo.data.thumbUrl}
@@ -153,6 +157,21 @@ export function PhotoDetailScreen({ id }: { id: string }) {
                 preload="metadata"
                 className="absolute inset-0 h-full w-full object-contain"
               />
+              {playingUrl !== photo.data.url ? (
+                <button
+                  type="button"
+                  aria-label="영상 재생"
+                  onClick={() => {
+                    setPlayingUrl(photo.data!.url);
+                    void videoRef.current?.play();
+                  }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink/60 pl-1">
+                    <Play className="h-7 w-7 text-white" strokeWidth={1.75} fill="currentColor" />
+                  </span>
+                </button>
+              ) : null}
               {prev ? (
                 <button type="button" onClick={() => navTo(prev.id)} aria-label="이전 사진" className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white">
                   <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
