@@ -16,6 +16,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # PageProps/LayoutProps 는 next 가 생성하는 전역 타입 — CI 의 깨끗한 환경에선 먼저 만들어야 tsc 가 통과한다
+      - name: Generate Next.js types
+        run: npx next typegen
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Lint
