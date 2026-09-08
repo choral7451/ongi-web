@@ -28,7 +28,8 @@ export function AlbumDetailScreen({ id }: { id: string }) {
   const album = isAll || isUnfiled ? undefined : albums.data?.find((a) => a.id === id);
   const title = isAll ? '전체 사진' : isUnfiled ? '미분류' : (album?.title ?? '앨범');
   const ctx = isAll ? 'all' : isUnfiled ? 'unfiled' : `album:${id}`;
-  const coverUrl = isAll || isUnfiled ? query.data?.[0]?.url : album?.coverUrl;
+  // 최신이 영상이면 url 이 mp4 라 이미지로 못 그린다 — 포스터(thumbUrl) 우선
+  const coverUrl = isAll || isUnfiled ? (query.data?.[0]?.thumbUrl ?? query.data?.[0]?.url) : album?.coverUrl;
 
   // 선택 모드 — 작성자 본인 또는 관리자인 사진만 골라서 한 번에 삭제
   const dialog = useDialog();

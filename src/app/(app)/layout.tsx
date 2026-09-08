@@ -1,11 +1,6 @@
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
+import { redirect } from 'next/navigation';
 
-/** 로그인이 필요한 모든 화면 — 탭 구조의 셸 안에 그린다 */
-export default function AppLayout({ children }: LayoutProps<'/'>) {
-  return (
-    <AuthGuard>
-      <AppShell>{children}</AppShell>
-    </AuthGuard>
-  );
+/** 웹은 랜딩 전용으로 전환 — 로그인 필요 화면은 모두 랜딩으로 보낸다 (앱에서만 이용) */
+export default function AppLayout() {
+  redirect('/');
 }

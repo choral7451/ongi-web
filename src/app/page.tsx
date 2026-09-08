@@ -2,7 +2,6 @@ import { Heart, Images, Lock, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LandingCta } from '@/components/landing/LandingCta';
-import { LandingRedirect } from '@/components/landing/LandingRedirect';
 
 const FEATURES = [
   { Icon: Users, title: '가족만의 비공개 공간', body: '초대 코드로만 들어올 수 있어요. 우리 가족끼리만 보는 사진첩이에요.' },
@@ -11,11 +10,10 @@ const FEATURES = [
   { Icon: Lock, title: '안심하고 나누기', body: '사진은 초대된 구성원에게만 공개되고, 탈퇴하면 올린 사진이 모두 삭제돼요.' },
 ];
 
-/** 공개 랜딩 — 로그인 전 첫 화면. 로그인 상태면 피드로 리다이렉트 */
+/** 공개 랜딩 — 웹은 소개 전용, 이용은 앱에서 */
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <LandingRedirect />
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <span className="inline-block origin-left scale-x-[1.15] text-2xl leading-none font-bold tracking-[0.12em] text-ink [font-family:var(--font-logo),sans-serif]">ONGI</span>
         <nav className="flex items-center gap-5 text-sm text-neutral-700" aria-label="상단 메뉴">
@@ -43,7 +41,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
               <LandingCta variant="hero" />
             </div>
-            <p className="mt-4 text-xs text-neutral-500">카카오·구글 계정으로 3초 만에 시작 · 웹에서도 이어서 볼 수 있어요</p>
+            <p className="mt-4 text-xs text-neutral-500">카카오·구글 계정으로 3초 만에 시작해요</p>
           </div>
           <div className="mx-auto w-[240px] shrink-0 rounded-[36px] border border-divider bg-white p-2 shadow-[0_24px_60px_-24px_rgba(16,17,20,0.25)] md:w-[280px]">
             <Image
