@@ -95,10 +95,10 @@ export function AlbumsScreen() {
       ) : (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
           {allPhotos.data && allPhotos.data.length > 0 ? (
-            <AlbumCard href="/albums/all" coverUrl={allPhotos.data[0].url} title="전체 사진" meta={`${allPhotos.data.length}장 · 이 공간의 모든 사진`} />
+            <AlbumCard href="/albums/all" coverUrl={allPhotos.data[0].thumbUrl ?? allPhotos.data[0].url} title="전체 사진" meta={`${allPhotos.data.length}장 · 이 공간의 모든 사진`} />
           ) : null}
           {unfiled.data && unfiled.data.length > 0 ? (
-            <AlbumCard href="/albums/unfiled" coverUrl={unfiled.data[0].url} title="미분류" meta={`${unfiled.data.length}장 · 앨범에 담기 전 사진`} />
+            <AlbumCard href="/albums/unfiled" coverUrl={unfiled.data[0].thumbUrl ?? unfiled.data[0].url} title="미분류" meta={`${unfiled.data.length}장 · 앨범에 담기 전 사진`} />
           ) : null}
           {albums.data?.map((album) => (
             <AlbumCard key={album.id} href={`/albums/${album.id}`} coverUrl={album.coverUrl} title={album.title} meta={`${album.photoCount}장 · ${album.meta}`} onMenu={isAdmin ? () => openMenu(album) : undefined} />
