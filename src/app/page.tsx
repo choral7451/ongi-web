@@ -72,10 +72,11 @@ export default function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-6 py-16">
-          <div className="grid gap-10 sm:grid-cols-3">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ['/landing/03-album-all.webp', '모든 사진을 한눈에', '가족이 올린 사진이 앨범으로 차곡차곡 모여요.'],
               ['/landing/04-family.webp', '초대 코드 하나면 끝', '6자리 코드를 보내면 부모님도 바로 함께해요.'],
+              ['/landing/05-schedule.webp', '가족 일정까지 한곳에', '아버님 생신, 가족 모임을 등록하고 함께 챙겨요.'],
               ['/landing/02-albums.webp', '여행·성장 앨범 정리', '여행, 명절, 아이 성장을 앨범으로 나눠 담아요.'],
             ].map(([src, title, body]) => (
               <figure key={src} className="flex flex-col items-center gap-4">
