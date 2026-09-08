@@ -1,11 +1,13 @@
-import { Heart, Images, Lock, Users } from 'lucide-react';
+import { CalendarDays, Heart, Images, Lock, Users, Video } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LandingCta } from '@/components/landing/LandingCta';
 
 const FEATURES = [
   { Icon: Users, title: '가족만의 비공개 공간', body: '초대 코드로만 들어올 수 있어요. 우리 가족끼리만 보는 사진첩이에요.' },
+  { Icon: Video, title: '사진도, 영상도 함께', body: '아이의 첫걸음, 가족 여행의 순간까지. 사진과 영상을 한 번에 골라 올리고 전체화면으로 감상해요.' },
   { Icon: Images, title: '날짜순 피드와 앨범', body: '오늘 올라온 사진부터 차곡차곡. 여행, 명절, 아이 성장 앨범으로 정리해요.' },
+  { Icon: CalendarDays, title: '가족 일정 달력', body: '생일과 기념일을 함께 챙겨요. 공휴일까지 표시되는 달력으로 가족 모임 날짜를 잡기 쉬워요.' },
   { Icon: Heart, title: '따뜻해요와 한마디', body: '멀리 있어도 사진 한 장에 마음을 남겨요. 좋아요 대신 "따뜻해요".' },
   { Icon: Lock, title: '안심하고 나누기', body: '사진은 초대된 구성원에게만 공개되고, 탈퇴하면 올린 사진이 모두 삭제돼요.' },
 ];
@@ -35,8 +37,8 @@ export default function LandingPage() {
             </h1>
             <div className="my-6 h-px w-14 bg-accent-300" />
             <p className="max-w-xl text-base leading-7 text-muted">
-              온기는 가족만 들어올 수 있는 사진 공간이에요. 부모님 폰에도, 형제 폰에도 흩어진 사진을 한곳에 모으고, 서로의 오늘에
-              따뜻한 한마디를 남겨보세요.
+              온기는 가족만 들어올 수 있는 사진 공간이에요. 부모님 폰에도, 형제 폰에도 흩어진 사진과 영상을 한곳에 모으고, 서로의
+              오늘에 따뜻한 한마디를 남겨보세요.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
               <LandingCta variant="hero" />
@@ -56,7 +58,7 @@ export default function LandingPage() {
         </section>
 
         <section id="features" className="border-t border-divider bg-neutral-100/60">
-          <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ Icon, title, body }) => (
               <article key={title} className="flex flex-col gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-md border border-divider bg-bg text-accent">
@@ -95,7 +97,7 @@ export default function LandingPage() {
             {[
               ['1', '가족 공간 만들기', '카카오나 구글 계정으로 시작하고 "김씨네 온기" 같은 이름으로 공간을 만들어요.'],
               ['2', '초대 코드 나누기', '6자리 초대 코드를 가족 채팅방에 보내면, 코드 입력만으로 바로 참여해요.'],
-              ['3', '사진 올리고 마음 남기기', '오늘 찍은 사진을 올리고, 가족이 남긴 따뜻해요와 한마디를 확인해요.'],
+              ['3', '사진·영상 올리고 마음 남기기', '오늘 찍은 사진과 영상을 올리고, 가족이 남긴 따뜻해요와 한마디를 확인해요.'],
             ].map(([step, title, body]) => (
               <div key={step} className="flex gap-4">
                 <span className="font-serif text-3xl font-semibold text-accent-300">{step}</span>
