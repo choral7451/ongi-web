@@ -1,10 +1,12 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/State';
+import { VideoPlaceholder } from '@/components/ui/VideoPlaceholder';
+import { displayImageUrl } from '@/lib/photoDisplay';
 import type { Photo } from '@/types';
 
 interface PhotoGridProps {
@@ -32,7 +34,20 @@ export function PhotoGrid({ photos, isLoading, isError, onRetry, ctx, emptyMessa
       {photos.map((photo) => {
         const allowed = !selectable || (canSelect?.(photo) ?? true);
         const selected = selectable && (selectedIds?.has(photo.id) ?? false);
-        const img = <Image src={photo.thumbUrl ?? photo.url} alt={photo.caption ?? '사진'} fill sizes="(min-width: 1024px) 200px, 33vw" className={cn('object-cover transition-opacity', !selectable && 'hover:opacity-90', selectable && !allowed && 'opacity-35')} />;
+        const thumbSrc = displayImageUrl(photo);
+        // 포스터 없는 영상은 mp4 를 <img> 로 못 그린다 — 대신 ▶ 자리표시자
+        const img = thumbSrc ? (
+          <>
+            <Image src={thumbSrc} alt={photo.caption ?? '사진'} fill sizes="(min-width: 1024px) 200px, 33vw" className={cn('object-cover transition-opacity', !selectable && 'hover:opacity-90', selectable && !allowed && 'opacity-35')} />
+            {photo.mediaType === 'video' ? (
+              <span className="absolute bottom-1.5 left-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ink/55 text-white">
+                <Play className="h-[9px] w-[9px]" strokeWidth={2} fill="currentColor" />
+              </span>
+            ) : null}
+          </>
+        ) : (
+          <VideoPlaceholder className={cn(selectable && !allowed && 'opacity-35')} />
+        );
         return (
           <li key={photo.id} className={cn('relative aspect-square overflow-hidden bg-neutral-200', selected && 'ring-2 ring-accent ring-inset')}>
             {selectable ? (

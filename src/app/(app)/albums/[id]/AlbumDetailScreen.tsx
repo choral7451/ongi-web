@@ -13,6 +13,7 @@ import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { queryKeys, useAlbumPhotos, useAlbums, useCopyPhotos, useDeletePhotos, useFeed, useMembers, useMovePhotos, useMyGroups, useUnfiledPhotos } from '@/lib/queries';
 import { useActiveGroupId } from '@/lib/store/session';
 import type { Photo } from '@/types';
+import { pickCoverUrl } from '@/lib/photoDisplay';
 
 /** 앨범 상세 — id 가 all/unfiled 면 가상 앨범 */
 export function AlbumDetailScreen({ id }: { id: string }) {
@@ -28,8 +29,8 @@ export function AlbumDetailScreen({ id }: { id: string }) {
   const album = isAll || isUnfiled ? undefined : albums.data?.find((a) => a.id === id);
   const title = isAll ? '전체 사진' : isUnfiled ? '미분류' : (album?.title ?? '앨범');
   const ctx = isAll ? 'all' : isUnfiled ? 'unfiled' : `album:${id}`;
-  // 최신이 영상이면 url 이 mp4 라 이미지로 못 그린다 — 포스터(thumbUrl) 우선
-  const coverUrl = isAll || isUnfiled ? (query.data?.[0]?.thumbUrl ?? query.data?.[0]?.url) : album?.coverUrl;
+  // 커버는 그릴 수 있는 가장 최근 항목 — 포스터 없는 영상(url 이 mp4)은 건너뛴다
+  const coverUrl = isAll || isUnfiled ? pickCoverUrl(query.data) : album?.coverUrl;
 
   // 선택 모드 — 작성자 본인 또는 관리자인 사진만 골라서 한 번에 삭제
   const dialog = useDialog();
