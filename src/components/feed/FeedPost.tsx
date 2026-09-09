@@ -4,6 +4,8 @@ import { Heart, MessageCircle, MoreHorizontal, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
+import { VideoPlaceholder } from '@/components/ui/VideoPlaceholder';
+import { displayImageUrl } from '@/lib/photoDisplay';
 import { usePhotoActions } from '@/components/photos/usePhotoActions';
 import { useToggleLike } from '@/lib/queries';
 import { formatTime } from '@/lib/utils/format';
@@ -20,11 +22,17 @@ export function FeedPost({ photo, author, album }: FeedPostProps) {
   const toggleLike = useToggleLike();
   const openActions = usePhotoActions();
   const href = { pathname: `/photos/${photo.id}`, query: { ctx: 'feed' } };
+  const posterSrc = displayImageUrl(photo);
 
   return (
     <article className="flex flex-col gap-2.5">
       <Link href={href} className="relative block w-full overflow-hidden bg-accent-100" style={{ aspectRatio: photo.aspectRatio || 1 }}>
-        <Image src={photo.thumbUrl ?? photo.url} alt={photo.caption ?? '가족 사진'} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+        {posterSrc ? (
+          <Image src={posterSrc} alt={photo.caption ?? '가족 사진'} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+        ) : (
+          // 포스터 없는 영상 — mp4 를 <img> 로 그리면 빈 칸이 된다
+          <VideoPlaceholder iconClassName="h-8 w-8" />
+        )}
         {photo.mediaType === 'video' ? (
           <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-ink/60 px-2 py-1 text-[11px] tabular-nums text-white">
             <Play className="h-[11px] w-[11px]" strokeWidth={1.75} fill="currentColor" />
