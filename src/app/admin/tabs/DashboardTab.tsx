@@ -19,6 +19,7 @@ export function DashboardTab() {
     { label: '영상', value: totals.videos },
     { label: '댓글', value: totals.comments },
     { label: '미처리 신고', value: totals.openReports, alert: totals.openReports > 0 },
+    { label: '미답변 문의', value: totals.openInquiries ?? 0, alert: (totals.openInquiries ?? 0) > 0 },
   ];
   const max = Math.max(1, ...signups.map((s) => s.count));
 

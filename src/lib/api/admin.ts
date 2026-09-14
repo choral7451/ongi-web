@@ -3,7 +3,7 @@ import { post, put, request } from './client';
 /** 관리자 API (/ongi/admin) — 서버가 매 요청 등급을 확인한다. 권한 없으면 403 */
 
 export type AdminType = 'ADMIN' | 'SUPER_ADMIN';
-export type AdminPermission = 'dashboard' | 'reports' | 'directory' | 'configs' | 'grant' | 'sensitive' | 'photos';
+export type AdminPermission = 'dashboard' | 'reports' | 'inquiries' | 'directory' | 'configs' | 'grant' | 'sensitive' | 'photos';
 
 export interface AdminMe {
   userId: string;
@@ -13,7 +13,7 @@ export interface AdminMe {
 }
 
 export interface AdminDashboard {
-  totals: { users: number; newUsers7d: number; groups: number; photos: number; videos: number; comments: number; openReports: number };
+  totals: { users: number; newUsers7d: number; groups: number; photos: number; videos: number; comments: number; openReports: number; openInquiries: number };
   signups: { day: string; count: number }[];
 }
 
@@ -90,6 +90,18 @@ export interface AdminAccessLog {
   createdAt: string;
 }
 
+export interface AdminInquiry {
+  id: string;
+  status: 'open' | 'answered';
+  /** 민감 정보 권한이 없으면 이메일은 가려진 값 */
+  user: { id: string; name: string | null; email: string | null };
+  content: string;
+  answer: string | null;
+  answeredByName: string | null;
+  answeredAt: string | null;
+  createdAt: string;
+}
+
 export interface AdminConfig {
   key: string;
   value: string;
@@ -126,3 +138,8 @@ export const getGroupPhotos = (id: string, page: number) =>
 export const getUserPhotos = (id: string, page: number) =>
   request<{ photos: AdminPhoto[] }>(`/ongi/admin/users/${id}/photos${qs({ page })}`).then((r) => r.photos);
 export const getAccessLogs = (page: number) => request<{ logs: AdminAccessLog[] }>(`/ongi/admin/access-logs${qs({ page })}`).then((r) => r.logs);
+
+export const getInquiries = (status: 'open' | 'answered' | 'all', page: number) =>
+  request<{ inquiries: AdminInquiry[] }>(`/ongi/admin/inquiries${qs({ status: status === 'all' ? undefined : status, page })}`).then((r) => r.inquiries);
+/** 답변 작성·수정 — 첫 답변이면 서버가 문의자에게 푸시를 보낸다 */
+export const answerInquiry = (id: string, answer: string) => put<{ ok: boolean }>(`/ongi/admin/inquiries/${id}/answer`, { answer });
