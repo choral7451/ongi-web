@@ -15,6 +15,7 @@ import { GoogleSignInCancelled } from '@/lib/api/google';
 import { startKakaoLogin } from '@/lib/api/kakao';
 import { useSession } from '@/lib/store/session';
 import { cn } from '@/lib/utils/cn';
+import { AccessLogsTab } from './tabs/AccessLogsTab';
 import { ConfigsTab } from './tabs/ConfigsTab';
 import { DashboardTab } from './tabs/DashboardTab';
 import { GroupsTab } from './tabs/GroupsTab';
@@ -27,6 +28,7 @@ const TABS: { key: string; label: string; permission: AdminPermission }[] = [
   { key: 'users', label: '사용자', permission: 'directory' },
   { key: 'groups', label: '가족 공간', permission: 'directory' },
   { key: 'configs', label: '앱 버전', permission: 'configs' },
+  { key: 'access-logs', label: '열람 기록', permission: 'photos' },
 ];
 
 /** 관리자 페이지 — 로그인 → 서버에서 관리자 등급 확인 → 등급이 가진 권한의 탭만 보여준다. 관리자가 아니면 404 처럼 보인다 */
@@ -86,9 +88,10 @@ function AdminShell({ me }: { me: AdminMe }) {
 
       {active?.key === 'dashboard' ? <DashboardTab /> : null}
       {active?.key === 'reports' ? <ReportsTab /> : null}
-      {active?.key === 'users' ? <UsersTab myUserId={me.userId} canGrant={can('grant')} canSeeSensitive={can('sensitive')} /> : null}
-      {active?.key === 'groups' ? <GroupsTab /> : null}
+      {active?.key === 'users' ? <UsersTab myUserId={me.userId} canGrant={can('grant')} canSeeSensitive={can('sensitive')} canViewPhotos={can('photos')} /> : null}
+      {active?.key === 'groups' ? <GroupsTab canViewPhotos={can('photos')} /> : null}
       {active?.key === 'configs' ? <ConfigsTab /> : null}
+      {active?.key === 'access-logs' ? <AccessLogsTab /> : null}
     </div>
   );
 }

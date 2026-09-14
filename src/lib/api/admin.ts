@@ -3,7 +3,7 @@ import { post, put, request } from './client';
 /** 관리자 API (/ongi/admin) — 서버가 매 요청 등급을 확인한다. 권한 없으면 403 */
 
 export type AdminType = 'ADMIN' | 'SUPER_ADMIN';
-export type AdminPermission = 'dashboard' | 'reports' | 'directory' | 'configs' | 'grant' | 'sensitive';
+export type AdminPermission = 'dashboard' | 'reports' | 'directory' | 'configs' | 'grant' | 'sensitive' | 'photos';
 
 export interface AdminMe {
   userId: string;
@@ -66,6 +66,30 @@ export interface AdminGroupDetail {
   members: { memberId: string; userId: string; name: string; role: string; joinedAt: string; photoCount: number }[];
 }
 
+export interface AdminPhoto {
+  id: string;
+  groupId: string;
+  groupName: string;
+  authorName: string | null;
+  authorUserId: string | null;
+  url: string;
+  thumbUrl: string | null;
+  mediaType: string;
+  caption: string | null;
+  createdAt: string;
+}
+
+export interface AdminAccessLog {
+  id: string;
+  adminUserId: string;
+  adminName: string | null;
+  action: string;
+  targetType: 'group' | 'user';
+  targetId: string;
+  targetName: string | null;
+  createdAt: string;
+}
+
 export interface AdminConfig {
   key: string;
   value: string;
@@ -95,3 +119,10 @@ export const getGroup = (id: string) => request<AdminGroupDetail>(`/ongi/admin/g
 
 export const getConfigs = () => request<{ configs: AdminConfig[] }>('/ongi/admin/configs').then((r) => r.configs);
 export const setConfig = (key: string, value: string) => put<{ ok: boolean }>('/ongi/admin/configs', { key, value });
+
+/** 가족 사진 열람 — 서버가 조회마다 열람 기록을 남긴다 */
+export const getGroupPhotos = (id: string, page: number) =>
+  request<{ photos: AdminPhoto[] }>(`/ongi/admin/groups/${id}/photos${qs({ page })}`).then((r) => r.photos);
+export const getUserPhotos = (id: string, page: number) =>
+  request<{ photos: AdminPhoto[] }>(`/ongi/admin/users/${id}/photos${qs({ page })}`).then((r) => r.photos);
+export const getAccessLogs = (page: number) => request<{ logs: AdminAccessLog[] }>(`/ongi/admin/access-logs${qs({ page })}`).then((r) => r.logs);

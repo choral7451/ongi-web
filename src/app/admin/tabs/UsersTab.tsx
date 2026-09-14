@@ -12,12 +12,23 @@ import { adminApi } from '@/lib/api';
 import type { AdminUser } from '@/lib/api/admin';
 import { cn } from '@/lib/utils/cn';
 import { formatFullDateTime } from '@/lib/utils/format';
+import { AdminPhotoGrid } from './AdminPhotoGrid';
 import { Pager } from './Pager';
 
 const TYPE_LABEL: Record<AdminUser['type'], string> = { USER: '일반', ADMIN: '관리자', SUPER_ADMIN: '최고 관리자' };
 const SNS_LABEL: Record<string, string> = { google: 'Google', apple: 'Apple', kakao: '카카오', naver: '네이버' };
 
-export function UsersTab({ myUserId, canGrant, canSeeSensitive }: { myUserId: string; canGrant: boolean; canSeeSensitive: boolean }) {
+export function UsersTab({
+  myUserId,
+  canGrant,
+  canSeeSensitive,
+  canViewPhotos,
+}: {
+  myUserId: string;
+  canGrant: boolean;
+  canSeeSensitive: boolean;
+  canViewPhotos: boolean;
+}) {
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -70,7 +81,7 @@ export function UsersTab({ myUserId, canGrant, canSeeSensitive }: { myUserId: st
 
       <div className="min-w-0">
         {selectedId ? (
-          <UserDetail userId={selectedId} isMe={selectedId === myUserId} canGrant={canGrant} />
+          <UserDetail key={selectedId} userId={selectedId} isMe={selectedId === myUserId} canGrant={canGrant} canViewPhotos={canViewPhotos} />
         ) : (
           <EmptyState>사용자를 선택하면 상세가 보여요.</EmptyState>
         )}
@@ -79,7 +90,7 @@ export function UsersTab({ myUserId, canGrant, canSeeSensitive }: { myUserId: st
   );
 }
 
-function UserDetail({ userId, isMe, canGrant }: { userId: string; isMe: boolean; canGrant: boolean }) {
+function UserDetail({ userId, isMe, canGrant, canViewPhotos }: { userId: string; isMe: boolean; canGrant: boolean; canViewPhotos: boolean }) {
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const alertError = useAlertError();
@@ -154,6 +165,8 @@ function UserDetail({ userId, isMe, canGrant }: { userId: string; isMe: boolean;
           ))}
         </ul>
       </section>
+
+      {canViewPhotos ? <AdminPhotoGrid target="user" id={user.id} /> : null}
 
       {showGrant ? (
         <Button variant={nextType === 'ADMIN' ? 'primary' : 'danger'} disabled={grant.isPending} onClick={confirmGrant} className="self-start">

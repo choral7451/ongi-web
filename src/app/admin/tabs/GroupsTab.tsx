@@ -9,9 +9,10 @@ import { EmptyState, ErrorState, Spinner } from '@/components/ui/State';
 import { adminApi } from '@/lib/api';
 import { cn } from '@/lib/utils/cn';
 import { formatFullDateTime } from '@/lib/utils/format';
+import { AdminPhotoGrid } from './AdminPhotoGrid';
 import { Pager } from './Pager';
 
-export function GroupsTab() {
+export function GroupsTab({ canViewPhotos }: { canViewPhotos: boolean }) {
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -58,12 +59,12 @@ export function GroupsTab() {
         <Pager page={page} hasNext={(groups.data?.length ?? 0) === 50} onChange={setPage} />
       </div>
 
-      <div className="min-w-0">{selectedId ? <GroupDetail groupId={selectedId} /> : <EmptyState>공간을 선택하면 상세가 보여요.</EmptyState>}</div>
+      <div className="min-w-0">{selectedId ? <GroupDetail key={selectedId} groupId={selectedId} canViewPhotos={canViewPhotos} /> : <EmptyState>공간을 선택하면 상세가 보여요.</EmptyState>}</div>
     </div>
   );
 }
 
-function GroupDetail({ groupId }: { groupId: string }) {
+function GroupDetail({ groupId, canViewPhotos }: { groupId: string; canViewPhotos: boolean }) {
   const detail = useQuery({ queryKey: ['admin', 'group', groupId], queryFn: () => adminApi.getGroup(groupId) });
 
   if (detail.isPending) return <Spinner />;
@@ -100,6 +101,8 @@ function GroupDetail({ groupId }: { groupId: string }) {
           ))}
         </ul>
       </section>
+
+      {canViewPhotos ? <AdminPhotoGrid target="group" id={group.id} /> : null}
     </div>
   );
 }
