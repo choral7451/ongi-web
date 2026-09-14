@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
 import { Spinner } from '@/components/ui/State';
 
-/** 카카오 로그인 콜백 — 인가 코드를 로그인 화면으로 넘겨 공용 로그인 흐름을 재사용한다 */
+/** 카카오 로그인 콜백 — 웹은 랜딩 전용이라 관리자 로그인(state=/admin)만 인가 코드를 넘기고, 그 외는 랜딩으로 */
 function KakaoCallback() {
   const router = useRouter();
   const params = useSearchParams();
@@ -12,13 +12,11 @@ function KakaoCallback() {
   useEffect(() => {
     const code = params.get('code');
     const next = params.get('state');
-    if (!code) {
-      router.replace('/login');
+    if (!code || !next?.startsWith('/admin')) {
+      router.replace('/');
       return;
     }
-    const query = new URLSearchParams({ kakaoCode: code });
-    if (next) query.set('next', next);
-    router.replace(`/login?${query.toString()}`);
+    router.replace(`/admin?${new URLSearchParams({ kakaoCode: code }).toString()}`);
   }, [params, router]);
 
   return (

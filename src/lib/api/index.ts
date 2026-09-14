@@ -1,3 +1,4 @@
+export * as adminApi from './admin';
 export * as albumsApi from './albums';
 export * as authApi from './auth';
 export * as eventsApi from './events';
