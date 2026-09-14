@@ -1,16 +1,6 @@
-import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import { AuthGuard } from '@/components/layout/AuthGuard';
-import { LoginScreen } from './LoginScreen';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = { title: '로그인' };
-
+/** 웹은 랜딩 전용 — 일반 로그인 화면은 막는다 (관리자 로그인은 /admin 에서) */
 export default function LoginPage() {
-  return (
-    <AuthGuard mode="guest">
-      <Suspense>
-        <LoginScreen />
-      </Suspense>
-    </AuthGuard>
-  );
+  redirect('/');
 }
