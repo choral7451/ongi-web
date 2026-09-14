@@ -19,12 +19,14 @@ import { AccessLogsTab } from './tabs/AccessLogsTab';
 import { ConfigsTab } from './tabs/ConfigsTab';
 import { DashboardTab } from './tabs/DashboardTab';
 import { GroupsTab } from './tabs/GroupsTab';
+import { InquiriesTab } from './tabs/InquiriesTab';
 import { ReportsTab } from './tabs/ReportsTab';
 import { UsersTab } from './tabs/UsersTab';
 
 const TABS: { key: string; label: string; permission: AdminPermission }[] = [
   { key: 'dashboard', label: '운영 현황', permission: 'dashboard' },
   { key: 'reports', label: '신고', permission: 'reports' },
+  { key: 'inquiries', label: '문의', permission: 'inquiries' },
   { key: 'users', label: '사용자', permission: 'directory' },
   { key: 'groups', label: '가족 공간', permission: 'directory' },
   { key: 'configs', label: '앱 버전', permission: 'configs' },
@@ -88,6 +90,7 @@ function AdminShell({ me }: { me: AdminMe }) {
 
       {active?.key === 'dashboard' ? <DashboardTab /> : null}
       {active?.key === 'reports' ? <ReportsTab /> : null}
+      {active?.key === 'inquiries' ? <InquiriesTab /> : null}
       {active?.key === 'users' ? <UsersTab myUserId={me.userId} canGrant={can('grant')} canSeeSensitive={can('sensitive')} canViewPhotos={can('photos')} /> : null}
       {active?.key === 'groups' ? <GroupsTab canViewPhotos={can('photos')} /> : null}
       {active?.key === 'configs' ? <ConfigsTab /> : null}
