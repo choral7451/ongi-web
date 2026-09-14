@@ -45,7 +45,7 @@ function AdminGate() {
   const me = useQuery({ queryKey: ['admin', 'me'], queryFn: adminApi.getMe, retry: false });
 
   if (me.isPending) return <Spinner />;
-  if (me.error instanceof ApiError && (me.error.status === 403 || me.error.status === 401)) return <NotFoundView />;
+  if (me.error instanceof ApiError && (me.error.status === 403 || me.error.status === 401)) return <DeniedView status={me.error.status} />;
   if (me.isError) return <ErrorState message="관리자 정보를 불러오지 못했어요." onRetry={() => me.refetch()} />;
   return <AdminShell me={me.data} />;
 }
@@ -96,7 +96,18 @@ function AdminShell({ me }: { me: AdminMe }) {
   );
 }
 
-function NotFoundView() {
+/**
+ * 관리자가 아닌 계정 — 관리자 페이지 존재를 드러내지 않도록 404 처럼 보이게 한다.
+ * 계정을 바꿀 수 있게 아주 작은 링크만 두고, 원인(로그인된 계정 id·거절 사유)은 개발자 도구 콘솔에만 남긴다.
+ */
+function DeniedView({ status }: { status: number }) {
+  const signOut = useSession((s) => s.signOut);
+  const currentUserId = useSession((s) => s.currentUserId);
+
+  useEffect(() => {
+    console.info(`[admin] 거절 ${status} — 로그인된 온기 사용자 id ${currentUserId || '알 수 없음'} (ongi_users.type 이 ADMIN·SUPER_ADMIN 인지 확인)`);
+  }, [status, currentUserId]);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-center">
       <p className="font-serif text-5xl font-semibold text-ink">404</p>
@@ -104,6 +115,9 @@ function NotFoundView() {
       <Link href="/" className="text-sm text-accent-700 underline">
         처음으로
       </Link>
+      <button type="button" onClick={signOut} className="mt-6 text-[11px] text-neutral-400 hover:text-muted">
+        다른 계정으로 로그인
+      </button>
     </div>
   );
 }
