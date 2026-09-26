@@ -5,7 +5,7 @@ const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.ongif
 export const DOWNLOAD_SECTION_ID = 'download';
 
 const HERO_BUTTON_CLASS =
-  'inline-flex items-center gap-2 rounded-md bg-ink px-6 py-3 font-serif text-sm font-semibold text-bg hover:opacity-85';
+  'inline-flex w-full min-w-[13.5rem] items-center justify-center gap-2 rounded-md bg-ink px-6 py-3 font-serif text-sm font-semibold text-bg hover:opacity-85 sm:w-auto';
 
 /** 랜딩 CTA — 웹은 랜딩 전용이라 로그인 대신 App Store · Google Play 다운로드만 안내 */
 export function LandingCta({ variant }: { variant: 'header' | 'hero' }) {
