@@ -17,7 +17,7 @@ type StatusFilter = 'open' | 'answered' | 'all';
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'open', label: '답변 대기' },
-  { key: 'answered', label: '답변 완료' },
+  { key: 'answered', label: '완료' },
   { key: 'all', label: '전체' },
 ];
 
@@ -66,7 +66,10 @@ export function InquiriesTab() {
 function InquiryCard({ inquiry }: { inquiry: AdminInquiry }) {
   const queryClient = useQueryClient();
   const alertError = useAlertError();
-  const [editing, setEditing] = useState(inquiry.answer === null);
+  // 답변 없이 완료한 문의는 answer 가 빈 문자열이다
+  const isOpen = inquiry.answer === null;
+  const hasAnswer = !isOpen && inquiry.answer !== '';
+  const [editing, setEditing] = useState(isOpen);
   const [draft, setDraft] = useState(inquiry.answer ?? '');
   const save = useMutation({
     mutationFn: (answer: string) => adminApi.answerInquiry(inquiry.id, answer),
@@ -74,15 +77,17 @@ function InquiryCard({ inquiry }: { inquiry: AdminInquiry }) {
       setEditing(false);
       void queryClient.invalidateQueries({ queryKey: ['admin'] });
     },
-    onError: alertError('답변 저장 실패'),
+    onError: alertError('저장 실패'),
   });
 
   const answer = draft.trim();
+  // 대기 중인 문의만 빈 채로 완료할 수 있다 — 이미 쓴 답변을 실수로 비우지 않게
+  const canSubmit = (isOpen || answer.length > 0) && !save.isPending;
 
   return (
     <li className="flex flex-col gap-3 rounded-lg border border-divider p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Tag label={inquiry.status === 'open' ? '답변 대기' : '답변 완료'} variant={inquiry.status === 'open' ? 'accent' : 'neutral'} />
+        <Tag label={isOpen ? '답변 대기' : hasAnswer ? '답변 완료' : '답변 없이 완료'} variant={isOpen ? 'accent' : 'neutral'} />
         <span className="text-[13px] text-ink">{inquiry.user.name ?? '알 수 없음'}</span>
         <span className="text-[11px] text-muted">
           #{inquiry.user.id}
@@ -98,21 +103,21 @@ function InquiryCard({ inquiry }: { inquiry: AdminInquiry }) {
           className="flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            if (answer.length > 0 && !save.isPending) save.mutate(answer);
+            if (canSubmit) save.mutate(answer);
           }}
         >
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={MAX_LENGTH}
-            placeholder="답변을 입력하면 문의한 사용자가 앱에서 볼 수 있어요. 첫 답변은 푸시 알림도 가요."
+            placeholder={`답변을 입력하면 문의한 사용자가 앱에서 볼 수 있어요. 첫 답변은 푸시 알림도 가요.${isOpen ? ' 비워 두면 알림 없이 완료 처리돼요.' : ''}`}
             className="min-h-28"
           />
           <div className="flex items-center gap-2">
             <span className="text-[11px] tabular-nums text-muted">
               {draft.length}/{MAX_LENGTH}
             </span>
-            {inquiry.answer !== null ? (
+            {!isOpen ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -126,24 +131,30 @@ function InquiryCard({ inquiry }: { inquiry: AdminInquiry }) {
                 취소
               </Button>
             ) : null}
-            <Button type="submit" variant="solid" size="sm" disabled={answer.length === 0 || save.isPending} className={inquiry.answer === null ? 'ml-auto' : undefined}>
-              {save.isPending ? '저장 중…' : inquiry.answer === null ? '답변 등록' : '수정 저장'}
+            <Button
+              type="submit"
+              variant={isOpen && answer.length === 0 ? 'secondary' : 'solid'}
+              size="sm"
+              disabled={!canSubmit}
+              className={isOpen ? 'ml-auto' : undefined}
+            >
+              {save.isPending ? '저장 중…' : isOpen && answer.length === 0 ? '답변 없이 완료' : hasAnswer ? '수정 저장' : '답변 등록'}
             </Button>
           </div>
         </form>
       ) : (
         <div className="flex flex-col gap-1.5 rounded-md bg-accent-100 px-3.5 py-3">
           <div className="flex items-center gap-2">
-            <span className="font-serif text-[12px] font-semibold text-accent-800">답변</span>
+            <span className="font-serif text-[12px] font-semibold text-accent-800">{hasAnswer ? '답변' : '답변 없이 완료'}</span>
             <span className="text-[11px] text-muted">
               {inquiry.answeredByName ?? ''}
               {inquiry.answeredAt ? ` · ${formatFullDateTime(inquiry.answeredAt)}` : ''}
             </span>
             <button type="button" onClick={() => setEditing(true)} className="ml-auto text-[12px] text-accent-700 underline">
-              수정
+              {hasAnswer ? '수정' : '답변 쓰기'}
             </button>
           </div>
-          <p className="text-sm leading-6 whitespace-pre-wrap text-ink">{inquiry.answer}</p>
+          {hasAnswer ? <p className="text-sm leading-6 whitespace-pre-wrap text-ink">{inquiry.answer}</p> : null}
         </div>
       )}
     </li>

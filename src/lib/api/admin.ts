@@ -96,6 +96,7 @@ export interface AdminInquiry {
   /** 민감 정보 권한이 없으면 이메일은 가려진 값 */
   user: { id: string; name: string | null; email: string | null };
   content: string;
+  /** null 답변 전 · '' 답변 없이 완료 */
   answer: string | null;
   answeredByName: string | null;
   answeredAt: string | null;
@@ -143,5 +144,5 @@ export const getAccessLogs = (page: number) => request<{ logs: AdminAccessLog[] 
 
 export const getInquiries = (status: 'open' | 'answered' | 'all', page: number) =>
   request<{ inquiries: AdminInquiry[] }>(`/ongi/admin/inquiries${qs({ status: status === 'all' ? undefined : status, page })}`).then((r) => r.inquiries);
-/** 답변 작성·수정 — 첫 답변이면 서버가 문의자에게 푸시를 보낸다 */
+/** 답변 작성·수정 — 빈 문자열이면 답변 없이 완료 처리. 내용 있는 첫 답변이면 서버가 문의자에게 푸시를 보낸다 */
 export const answerInquiry = (id: string, answer: string) => put<{ ok: boolean }>(`/ongi/admin/inquiries/${id}/answer`, { answer });
