@@ -1,7 +1,7 @@
 import { CalendarDays, Heart, Images, Lock, Users, Video } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LandingCta } from '@/components/landing/LandingCta';
+import { DOWNLOAD_SECTION_ID, LandingCta } from '@/components/landing/LandingCta';
 
 const FEATURES = [
   { Icon: Users, title: '가족만의 비공개 공간', body: '초대 코드로만 들어올 수 있어요. 우리 가족끼리만 보는 사진첩이에요.' },
@@ -40,7 +40,7 @@ export default function LandingPage() {
               온기는 가족만 들어올 수 있는 사진 공간이에요. 부모님 폰에도, 형제 폰에도 흩어진 사진과 영상을 한곳에 모으고, 서로의
               오늘에 따뜻한 한마디를 남겨보세요.
             </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+            <div id={DOWNLOAD_SECTION_ID} className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
               <LandingCta variant="hero" />
             </div>
             <p className="mt-4 text-xs text-neutral-500">카카오·구글 계정으로 3초 만에 시작해요</p>
