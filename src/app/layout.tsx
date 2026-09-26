@@ -23,6 +23,8 @@ export const metadata: Metadata = {
   // 모든 페이지 탭 제목을 '온기'로 고정 (페이지별 title 은 검색 엔진용 메타로만 남고 탭엔 안 보임)
   title: { default: '온기', template: '온기' },
   description: '흩어져 있는 가족의 하루를 한 곳에 모아 함께 봐요.',
+  // 네이버 서치어드바이저 사이트 소유 확인
+  verification: { other: { 'naver-site-verification': 'f152767b55a6819c76a9aa1556a8d28372d30b2e' } },
 };
 
 export const viewport: Viewport = {
