@@ -30,7 +30,7 @@ const TABS: { key: string; label: string; permission: AdminPermission }[] = [
   { key: 'users', label: '사용자', permission: 'directory' },
   { key: 'groups', label: '가족 공간', permission: 'directory' },
   { key: 'configs', label: '앱 버전', permission: 'configs' },
-  { key: 'access-logs', label: '열람 기록', permission: 'photos' },
+  { key: 'access-logs', label: '열람 · 삭제 기록', permission: 'photos' },
 ];
 
 /** 관리자 페이지 — 로그인 → 서버에서 관리자 등급 확인 → 등급이 가진 권한의 탭만 보여준다. 관리자가 아니면 404 처럼 보인다 */
@@ -92,7 +92,7 @@ function AdminShell({ me }: { me: AdminMe }) {
       {active?.key === 'reports' ? <ReportsTab /> : null}
       {active?.key === 'inquiries' ? <InquiriesTab /> : null}
       {active?.key === 'users' ? <UsersTab myUserId={me.userId} canGrant={can('grant')} canSeeSensitive={can('sensitive')} canViewPhotos={can('photos')} /> : null}
-      {active?.key === 'groups' ? <GroupsTab canViewPhotos={can('photos')} /> : null}
+      {active?.key === 'groups' ? <GroupsTab canViewPhotos={can('photos')} canDelete={can('deleteGroup')} /> : null}
       {active?.key === 'configs' ? <ConfigsTab /> : null}
       {active?.key === 'access-logs' ? <AccessLogsTab /> : null}
     </div>

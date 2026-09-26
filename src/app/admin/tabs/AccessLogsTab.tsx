@@ -8,8 +8,9 @@ import { formatFullDateTime } from '@/lib/utils/format';
 import { Pager } from './Pager';
 
 const TARGET_LABEL = { group: '가족 공간', user: '사용자' };
+const ACTION_LABEL: Record<string, string> = { view_photos: '사진 열람', delete_group: '삭제' };
 
-/** 운영 책임자의 가족 사진 열람 기록 — 개인정보 처리방침 5·7조 */
+/** 운영 책임자의 가족 사진 열람 · 가족 공간 삭제 기록 — 개인정보 처리방침 5·7조 */
 export function AccessLogsTab() {
   const [page, setPage] = useState(1);
   const logs = useQuery({ queryKey: ['admin', 'access-logs', page], queryFn: () => adminApi.getAccessLogs(page) });
@@ -19,7 +20,7 @@ export function AccessLogsTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      {logs.data.length === 0 ? <EmptyState>열람 기록이 없어요.</EmptyState> : null}
+      {logs.data.length === 0 ? <EmptyState>기록이 없어요.</EmptyState> : null}
       <ul className="flex flex-col divide-y divide-divider border-y border-divider">
         {logs.data.map((log) => (
           <li key={log.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-2 py-2.5 text-[13px]">
@@ -28,7 +29,8 @@ export function AccessLogsTab() {
             </span>
             <span className="text-muted">→</span>
             <span className="text-ink">
-              {TARGET_LABEL[log.targetType] ?? log.targetType} {log.targetName ?? ''} <span className="text-[11px] text-muted">#{log.targetId}</span> 사진 열람
+              {TARGET_LABEL[log.targetType] ?? log.targetType} {log.targetName ?? ''} <span className="text-[11px] text-muted">#{log.targetId}</span>{' '}
+              <span className={log.action === 'delete_group' ? 'text-danger' : undefined}>{ACTION_LABEL[log.action] ?? log.action}</span>
             </span>
             <span className="ml-auto text-[11px] tabular-nums text-muted">{formatFullDateTime(log.createdAt)}</span>
           </li>

@@ -1,9 +1,9 @@
-import { post, put, request } from './client';
+import { del, post, put, request } from './client';
 
 /** 관리자 API (/ongi/admin) — 서버가 매 요청 등급을 확인한다. 권한 없으면 403 */
 
 export type AdminType = 'ADMIN' | 'SUPER_ADMIN';
-export type AdminPermission = 'dashboard' | 'reports' | 'inquiries' | 'directory' | 'configs' | 'grant' | 'sensitive' | 'photos';
+export type AdminPermission = 'dashboard' | 'reports' | 'inquiries' | 'directory' | 'configs' | 'grant' | 'sensitive' | 'photos' | 'deleteGroup';
 
 export interface AdminMe {
   userId: string;
@@ -128,6 +128,8 @@ export const setUserType = (id: string, type: 'USER' | 'ADMIN') => put<{ ok: boo
 
 export const getGroups = (q: string, page: number) => request<{ groups: AdminGroup[] }>(`/ongi/admin/groups${qs({ q, page })}`).then((r) => r.groups);
 export const getGroup = (id: string) => request<AdminGroupDetail>(`/ongi/admin/groups/${id}`);
+/** 가족 공간 삭제 — 구성원·앨범·사진·댓글·일정까지 소프트 삭제, 서버가 삭제 기록을 남긴다 */
+export const deleteGroup = (id: string) => del(`/ongi/admin/groups/${id}`);
 
 export const getConfigs = () => request<{ configs: AdminConfig[] }>('/ongi/admin/configs').then((r) => r.configs);
 export const setConfig = (key: string, value: string) => put<{ ok: boolean }>('/ongi/admin/configs', { key, value });

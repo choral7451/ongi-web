@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useAlertError, useDialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { EmptyState, ErrorState, Spinner } from '@/components/ui/State';
@@ -12,7 +13,7 @@ import { formatFullDateTime } from '@/lib/utils/format';
 import { AdminPhotoGrid } from './AdminPhotoGrid';
 import { Pager } from './Pager';
 
-export function GroupsTab({ canViewPhotos }: { canViewPhotos: boolean }) {
+export function GroupsTab({ canViewPhotos, canDelete }: { canViewPhotos: boolean; canDelete: boolean }) {
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -59,18 +60,57 @@ export function GroupsTab({ canViewPhotos }: { canViewPhotos: boolean }) {
         <Pager page={page} hasNext={(groups.data?.length ?? 0) === 50} onChange={setPage} />
       </div>
 
-      <div className="min-w-0">{selectedId ? <GroupDetail key={selectedId} groupId={selectedId} canViewPhotos={canViewPhotos} /> : <EmptyState>공간을 선택하면 상세가 보여요.</EmptyState>}</div>
+      <div className="min-w-0">
+        {selectedId ? (
+          <GroupDetail key={selectedId} groupId={selectedId} canViewPhotos={canViewPhotos} canDelete={canDelete} onDeleted={() => setSelectedId(null)} />
+        ) : (
+          <EmptyState>공간을 선택하면 상세가 보여요.</EmptyState>
+        )}
+      </div>
     </div>
   );
 }
 
-function GroupDetail({ groupId, canViewPhotos }: { groupId: string; canViewPhotos: boolean }) {
+function GroupDetail({
+  groupId,
+  canViewPhotos,
+  canDelete,
+  onDeleted,
+}: {
+  groupId: string;
+  canViewPhotos: boolean;
+  canDelete: boolean;
+  onDeleted: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const dialog = useDialog();
+  const alertError = useAlertError();
   const detail = useQuery({ queryKey: ['admin', 'group', groupId], queryFn: () => adminApi.getGroup(groupId) });
+  const remove = useMutation({
+    mutationFn: () => adminApi.deleteGroup(groupId),
+    onSuccess: () => {
+      // 상세를 먼저 닫아야 지워진 공간을 다시 조회하지 않는다
+      onDeleted();
+      queryClient.removeQueries({ queryKey: ['admin', 'group', groupId] });
+      return queryClient.invalidateQueries({ queryKey: ['admin'] });
+    },
+    onError: alertError('가족 공간 삭제 실패'),
+  });
 
   if (detail.isPending) return <Spinner />;
   if (detail.isError) return <ErrorState message={detail.error.message} onRetry={() => detail.refetch()} />;
 
   const { group, members } = detail.data;
+
+  const confirmRemove = async () => {
+    const ok = await dialog.confirm({
+      title: `'${group.name}' 공간을 삭제할까요?`,
+      message: `구성원 ${members.length}명 · 사진/영상 ${group.photoCount}개와 앨범 · 댓글 · 일정이 함께 삭제되고, 구성원의 앱에서 이 공간이 사라져요. 삭제 기록이 남아요.`,
+      confirmText: '삭제',
+      destructive: true,
+    });
+    if (ok) remove.mutate();
+  };
 
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-divider p-4">
@@ -103,6 +143,12 @@ function GroupDetail({ groupId, canViewPhotos }: { groupId: string; canViewPhoto
       </section>
 
       {canViewPhotos ? <AdminPhotoGrid target="group" id={group.id} /> : null}
+
+      {canDelete ? (
+        <Button variant="danger" disabled={remove.isPending} onClick={confirmRemove} className="self-start">
+          {remove.isPending ? '삭제 중…' : '공간 삭제'}
+        </Button>
+      ) : null}
     </div>
   );
 }
