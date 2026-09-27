@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fredoka, Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
 import { AppProviders } from '@/components/providers/AppProviders';
+import { SITE_DESCRIPTION, SITE_OPEN_GRAPH, SITE_TITLE, SITE_URL } from '@/lib/site';
 import './globals.css';
 
 const notoSans = Noto_Sans_KR({
@@ -22,7 +23,11 @@ const notoSerif = Noto_Serif_KR({
 export const metadata: Metadata = {
   // 모든 페이지 탭 제목을 '온기'로 고정 (페이지별 title 은 검색 엔진용 메타로만 남고 탭엔 안 보임)
   title: { default: '온기', template: '온기' },
-  description: '흩어져 있는 가족의 하루를 한 곳에 모아 함께 봐요.',
+  description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  keywords: ['온기', '공유 앨범', '가족 앨범', '커플 앨범', '사진 공유', '비공개 앨범', '가족 캘린더', '기념일', '모임', '채팅'],
+  openGraph: SITE_OPEN_GRAPH,
+  twitter: { card: 'summary_large_image', title: SITE_TITLE, description: SITE_DESCRIPTION },
   // 네이버 서치어드바이저 사이트 소유 확인
   verification: { other: { 'naver-site-verification': 'f152767b55a6819c76a9aa1556a8d28372d30b2e' } },
 };
