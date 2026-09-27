@@ -20,7 +20,9 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: '전체' },
 ];
 
-const TARGET_LABEL: Record<AdminReport['targetType'], string> = { photo: '사진', comment: '댓글', member: '구성원' };
+const TARGET_LABEL: Record<AdminReport['targetType'], string> = { photo: '사진', comment: '댓글', member: '구성원', chat_message: '채팅 메시지' };
+/** 관리자 화면에서 바로 지울 수 있는 대상 — 구성원·채팅 메시지는 지원하지 않는다 */
+const REMOVABLE: AdminReport['targetType'][] = ['photo', 'comment'];
 
 export function ReportsTab() {
   const [status, setStatus] = useState<StatusFilter>('open');
@@ -127,7 +129,7 @@ function ReportCard({ report }: { report: AdminReport }) {
         </p>
 
         <div className="mt-1 flex flex-wrap gap-2">
-          {report.targetType !== 'member' && !report.targetDeleted ? (
+          {REMOVABLE.includes(report.targetType) && !report.targetDeleted ? (
             <Button variant="danger" size="sm" disabled={removeTarget.isPending} onClick={confirmRemove}>
               {TARGET_LABEL[report.targetType]} 삭제
             </Button>

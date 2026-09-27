@@ -23,7 +23,7 @@ export interface AdminReport {
   reason: string;
   createdAt: string;
   reporter: { userId: string; name: string | null };
-  targetType: 'photo' | 'comment' | 'member';
+  targetType: 'photo' | 'comment' | 'member' | 'chat_message';
   targetId: string;
   targetDeleted: boolean;
   targetName: string | null;
