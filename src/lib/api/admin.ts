@@ -76,9 +76,15 @@ export interface AdminUser {
   isTest?: boolean;
   createdAt: string;
   deletedAt: string | null;
+  /** 마지막 접속 — 접속 기록을 시작한(2026-09-29) 뒤로 접속하지 않았으면 null */
+  lastSeenAt?: string | null;
   groupCount: number;
   photoCount: number;
+  /** 소속 공간 (들어온 순) */
+  groups?: { groupId: string; groupName: string; memberName: string; role: string }[];
 }
+
+export type AdminUserSort = 'joined' | 'seen';
 
 export interface AdminUserDetail {
   user: AdminUser;
@@ -157,7 +163,8 @@ export const getReports = (status: 'open' | 'resolved' | 'all', page: number) =>
 export const setReportStatus = (id: string, status: 'open' | 'resolved') => put<{ ok: boolean }>(`/ongi/admin/reports/${id}/status`, { status });
 export const removeReportTarget = (id: string) => post<{ ok: boolean }>(`/ongi/admin/reports/${id}/remove-target`);
 
-export const getUsers = (q: string, page: number) => request<{ users: AdminUser[] }>(`/ongi/admin/users${qs({ q, page })}`).then((r) => r.users);
+export const getUsers = (q: string, page: number, sort: AdminUserSort = 'joined') =>
+  request<{ users: AdminUser[] }>(`/ongi/admin/users${qs({ q, page, sort: sort === 'joined' ? undefined : sort })}`).then((r) => r.users);
 export const getUser = (id: string) => request<AdminUserDetail>(`/ongi/admin/users/${id}`);
 export const setUserType = (id: string, type: 'USER' | 'ADMIN') => put<{ ok: boolean }>(`/ongi/admin/users/${id}/type`, { type });
 export const setUserTest = (id: string, isTest: boolean) => put<{ ok: boolean }>(`/ongi/admin/users/${id}/test`, { isTest });
