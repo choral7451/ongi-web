@@ -68,6 +68,7 @@ export function UsersTab({
                   <span className={cn('block truncate text-sm', user.deletedAt ? 'text-muted line-through' : 'text-ink')}>{user.name}</span>
                   <span className="block truncate text-[11px] text-muted">{user.email ?? '이메일 없음'}</span>
                 </span>
+                {user.isTest ? <Tag label="테스트" variant="outline" /> : null}
                 {user.type !== 'USER' ? <Tag label={TYPE_LABEL[user.type]} variant="accent" /> : null}
                 <span className="shrink-0 text-[11px] tabular-nums text-muted">
                   공간 {user.groupCount} · 사진 {user.photoCount}
@@ -100,6 +101,11 @@ function UserDetail({ userId, isMe, canGrant, canViewPhotos }: { userId: string;
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
     onError: alertError('등급 변경 실패'),
   });
+  const markTest = useMutation({
+    mutationFn: (isTest: boolean) => adminApi.setUserTest(userId, isTest),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
+    onError: alertError('테스트 계정 변경 실패'),
+  });
 
   if (detail.isPending) return <Spinner />;
   if (detail.isError) return <ErrorState message={detail.error.message} onRetry={() => detail.refetch()} />;
@@ -118,12 +124,25 @@ function UserDetail({ userId, isMe, canGrant, canViewPhotos }: { userId: string;
     if (ok) grant.mutate(nextType);
   };
 
+  const confirmTest = async () => {
+    const next = !user.isTest;
+    const ok = await dialog.confirm({
+      title: next ? `${user.name} 님을 테스트 계정으로 표시할까요?` : `${user.name} 님의 테스트 계정 표시를 풀까요?`,
+      message: next
+        ? '운영 현황과 지표의 수치에서 빠져요. 이 계정이 올린 사진·댓글·대화와, 테스트 계정만 있는 공간도 함께 빠져요. 계정 사용에는 영향이 없어요.'
+        : '이 계정과 그동안의 기록이 수치에 다시 들어가요.',
+      confirmText: next ? '표시' : '풀기',
+    });
+    if (ok) markTest.mutate(next);
+  };
+
   return (
     <div className="flex flex-col gap-5 rounded-lg border border-divider p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-serif text-lg font-semibold text-ink">{user.name}</h2>
         <Tag label={TYPE_LABEL[user.type]} variant={user.type === 'USER' ? 'neutral' : 'accent'} />
         {user.deletedAt ? <Tag label="탈퇴" variant="neutral" /> : null}
+        {user.isTest ? <Tag label="테스트 계정" variant="outline" /> : null}
       </div>
 
       <dl className="grid grid-cols-[80px_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-[13px]">
@@ -168,10 +187,20 @@ function UserDetail({ userId, isMe, canGrant, canViewPhotos }: { userId: string;
 
       {canViewPhotos ? <AdminPhotoGrid target="user" id={user.id} /> : null}
 
-      {showGrant ? (
-        <Button variant={nextType === 'ADMIN' ? 'primary' : 'danger'} disabled={grant.isPending} onClick={confirmGrant} className="self-start">
-          {nextType === 'ADMIN' ? '관리자로 지정' : '관리자 해제'}
-        </Button>
+      {canGrant || showGrant ? (
+        <div className="flex flex-wrap gap-2">
+          {/* 테스트 계정 표시는 본인·탈퇴한 계정도 된다 — 권한이 아니라 수치에서 뺄지의 표시 */}
+          {canGrant ? (
+            <Button variant="secondary" disabled={markTest.isPending} onClick={confirmTest}>
+              {user.isTest ? '테스트 계정 표시 풀기' : '테스트 계정으로 표시'}
+            </Button>
+          ) : null}
+          {showGrant ? (
+            <Button variant={nextType === 'ADMIN' ? 'primary' : 'danger'} disabled={grant.isPending} onClick={confirmGrant}>
+              {nextType === 'ADMIN' ? '관리자로 지정' : '관리자 해제'}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

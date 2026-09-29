@@ -21,10 +21,12 @@ import { DashboardTab } from './tabs/DashboardTab';
 import { GroupsTab } from './tabs/GroupsTab';
 import { InquiriesTab } from './tabs/InquiriesTab';
 import { ReportsTab } from './tabs/ReportsTab';
+import { StatsTab } from './tabs/StatsTab';
 import { UsersTab } from './tabs/UsersTab';
 
 const TABS: { key: string; label: string; permission: AdminPermission }[] = [
   { key: 'dashboard', label: '운영 현황', permission: 'dashboard' },
+  { key: 'stats', label: '지표', permission: 'dashboard' },
   { key: 'reports', label: '신고', permission: 'reports' },
   { key: 'inquiries', label: '문의', permission: 'inquiries' },
   { key: 'users', label: '사용자', permission: 'directory' },
@@ -89,6 +91,7 @@ function AdminShell({ me }: { me: AdminMe }) {
       </nav>
 
       {active?.key === 'dashboard' ? <DashboardTab /> : null}
+      {active?.key === 'stats' ? <StatsTab /> : null}
       {active?.key === 'reports' ? <ReportsTab /> : null}
       {active?.key === 'inquiries' ? <InquiriesTab /> : null}
       {active?.key === 'users' ? <UsersTab myUserId={me.userId} canGrant={can('grant')} canSeeSensitive={can('sensitive')} canViewPhotos={can('photos')} /> : null}

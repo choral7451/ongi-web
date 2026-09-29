@@ -17,6 +17,37 @@ export interface AdminDashboard {
   signups: { day: string; count: number }[];
 }
 
+export interface AdminStatsDaily {
+  day: string;
+  activeUsers: number;
+  /** 앱이 사용 시간을 보낸 사용자 수 (1.0.10 이상) */
+  measuredUsers: number;
+  /** 시간을 잰 사용자 1명당 평균 사용 시간(초) */
+  avgSeconds: number;
+  sessions: number;
+  signups: number;
+  photos: number;
+  comments: number;
+  chatMessages: number;
+}
+
+/** 지표 — 날짜는 한국 시간, 테스트 계정은 빠져 있다 */
+export interface AdminStats {
+  today: string;
+  /** 접속 기록을 시작한 날 — 그 전의 접속 지표는 없다 */
+  trackingSince: string | null;
+  active: { dau: number; wau: number; mau: number; stickiness: number };
+  daily: AdminStatsDaily[];
+  engagement: { measuredUserDays: number; avgSecondsPerUser: number; avgSessionsPerUser: number; avgSecondsPerSession: number };
+  /** rate 가 null 이면 아직 대상자가 없다 */
+  retention: { days: number; cohort: number; retained: number; rate: number | null }[];
+  spaces: { total: number; solo: number; soloRate: number; active7d: number; activeRate: number; avgMembers: number };
+  funnel: { users: number } & Record<'withGroup' | 'withPhoto' | 'withChat' | 'withPush', { count: number; rate: number }>;
+  platforms: { platform: string; users: number }[];
+  versions: { version: string; users: number }[];
+  excludedTestUsers?: number;
+}
+
 export interface AdminReport {
   id: string;
   status: 'open' | 'resolved';
@@ -41,6 +72,8 @@ export interface AdminUser {
   /** 민감 정보 권한이 없으면 null */
   snsType: string | null;
   type: 'USER' | AdminType;
+  /** 테스트 계정 — 운영 현황 · 지표 수치에서 빠진다 */
+  isTest?: boolean;
   createdAt: string;
   deletedAt: string | null;
   groupCount: number;
@@ -117,6 +150,7 @@ const qs = (params: Record<string, string | number | undefined>) => {
 
 export const getMe = () => request<AdminMe>('/ongi/admin/me');
 export const getDashboard = () => request<AdminDashboard>('/ongi/admin/dashboard');
+export const getStats = () => request<AdminStats>('/ongi/admin/stats');
 
 export const getReports = (status: 'open' | 'resolved' | 'all', page: number) =>
   request<{ reports: AdminReport[] }>(`/ongi/admin/reports${qs({ status: status === 'all' ? undefined : status, page })}`).then((r) => r.reports);
@@ -126,6 +160,7 @@ export const removeReportTarget = (id: string) => post<{ ok: boolean }>(`/ongi/a
 export const getUsers = (q: string, page: number) => request<{ users: AdminUser[] }>(`/ongi/admin/users${qs({ q, page })}`).then((r) => r.users);
 export const getUser = (id: string) => request<AdminUserDetail>(`/ongi/admin/users/${id}`);
 export const setUserType = (id: string, type: 'USER' | 'ADMIN') => put<{ ok: boolean }>(`/ongi/admin/users/${id}/type`, { type });
+export const setUserTest = (id: string, isTest: boolean) => put<{ ok: boolean }>(`/ongi/admin/users/${id}/test`, { isTest });
 
 export const getGroups = (q: string, page: number) => request<{ groups: AdminGroup[] }>(`/ongi/admin/groups${qs({ q, page })}`).then((r) => r.groups);
 export const getGroup = (id: string) => request<AdminGroupDetail>(`/ongi/admin/groups/${id}`);
