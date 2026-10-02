@@ -2,9 +2,9 @@ import { CalendarDays, Heart, Images, Lock, MessageCircle, Users } from 'lucide-
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DOWNLOAD_SECTION_ID, LandingCta } from '@/components/landing/LandingCta';
+import { LandingCta } from '@/components/landing/LandingCta';
 import { SITE_DESCRIPTION, SITE_OPEN_GRAPH, SITE_TITLE, SITE_URL } from '@/lib/site';
-import { APP_STORE_URL, GOOGLE_PLAY_URL } from '@/lib/utils/invite';
+import { APP_STORE_URL, DOWNLOAD_SECTION_ID, GOOGLE_PLAY_URL } from '@/lib/store';
 
 // 탭 제목은 레이아웃에서 '온기'로 고정 — 랜딩만 검색 결과에 보일 제목을 따로 준다
 export const metadata: Metadata = {

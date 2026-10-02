@@ -1,6 +1,7 @@
 /** 초대 문구 — 앱 설치 안내 + 코드 + 참여 방법 (웹은 랜딩만 남겨 앱으로만 참여, 앱 utils/invite.ts 와 동일 유지) */
-export const APP_STORE_URL = 'https://apps.apple.com/app/id6805759281';
-export const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.ongifamily.app';
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from '@/lib/store';
+
+export { APP_STORE_URL, GOOGLE_PLAY_URL };
 
 export function buildInviteMessage(params: { groupName?: string; inviteCode: string; expiresInDays?: number }): string {
   const { groupName, inviteCode, expiresInDays = 7 } = params;
