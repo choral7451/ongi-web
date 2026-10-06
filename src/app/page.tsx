@@ -14,6 +14,13 @@ export const metadata: Metadata = {
 };
 
 // 대상: 아기를 둔 엄마아빠가 조부모·친척에게 아기 사진을 나누는 것 (2026-10 재구성)
+const HERO_POINTS = [
+  '백일·돌·여행, 앨범별로 정리할 수 있어요',
+  '시간이 지나도 사라지지 않아요',
+  '초대한 가족만 볼 수 있어요',
+  '할머니 할아버지는 초대 코드 하나로 들어와요',
+];
+
 const PAINS = [
   ['단톡방에 올리면 금방 묻혀요', '어제 올린 사진을 다시 보려면 한참을 올려야 해요. 100일 사진이 어디 있는지 아무도 몰라요.'],
   ['시간이 지나면 사라져요', '메신저 사진은 저장 기간이 지나면 열리지 않아요. 돌잔치 때 백일 사진을 찾으면 이미 없어요.'],
@@ -100,10 +107,15 @@ export default function LandingPage() {
               가족에게만
             </h1>
             <div className="my-7 h-px w-14 bg-ink" />
-            <p className="max-w-xl text-base leading-7 text-muted md:text-[17px] md:leading-[1.75]">
-              단톡방에 올리면 금방 묻히고, 시간이 지나면 사라지는 아기 사진. 온기에 올리면 날짜순으로 차곡차곡 쌓여 언제든 다시 꺼내 볼 수 있고,
-              초대한 가족만 볼 수 있어요. 할머니 할아버지는 초대 코드 하나로 들어와요.
-            </p>
+            {/* 핵심 네 줄 — 아래 '이런 적 있으시죠?' 의 불편에 대한 답을 첫 화면에서 먼저 */}
+            <ul className="flex flex-col gap-2.5 text-left">
+              {HERO_POINTS.map((point) => (
+                <li key={point} className="flex items-start gap-2.5 text-base leading-7 text-neutral-800 md:text-[17px]">
+                  <Check className="mt-[5px] h-[18px] w-[18px] shrink-0 text-ink" strokeWidth={2} aria-hidden />
+                  {point}
+                </li>
+              ))}
+            </ul>
             <div id={DOWNLOAD_SECTION_ID} className="mt-8 flex w-full scroll-mt-24 flex-col items-center gap-3 sm:w-auto sm:flex-row">
               <LandingCta variant="hero" />
             </div>
