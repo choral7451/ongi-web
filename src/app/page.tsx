@@ -79,7 +79,8 @@ function PhoneShot({ src, alt, size, preload = false }: { src: string; alt: stri
 export default function LandingPage() {
   return (
     // break-keep: 한글이 낱말 중간에서 끊기지 않게 (예: "사라져/요")
-    <div className="flex min-h-screen flex-col break-keep">
+    // shrink-0: body 가 높이 100% flex 라서, 없으면 이 상자가 화면 한 장 높이로 줄어 sticky 헤더가 그 구간만 따라오다 사라진다
+    <div className="flex min-h-screen shrink-0 flex-col break-keep">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, '\\u003c') }} />
       {/* 스크롤해도 따라오는 헤더 — 로고와 다운로드 버튼만 */}
       <header className="sticky top-0 z-40 border-b border-divider bg-bg/90 backdrop-blur">
@@ -157,9 +158,13 @@ export default function LandingPage() {
                 </figure>
               ))}
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ Icon, title, body }) => (
-                <article key={title} className="flex flex-col gap-3 rounded-lg border border-divider bg-bg p-6">
+            {/* 5장 — 넓은 화면은 윗줄 3장·아랫줄 2장, 중간 폭은 2열에 마지막 장이 한 줄을 채워 빈 칸이 없게 */}
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
+              {FEATURES.map(({ Icon, title, body }, i) => (
+                <article
+                  key={title}
+                  className={`flex flex-col gap-3 rounded-lg border border-divider bg-bg p-6 ${i < 3 ? 'lg:col-span-2' : 'lg:col-span-3'} ${i === FEATURES.length - 1 ? 'sm:col-span-2' : ''}`}
+                >
                   <Icon className="h-[22px] w-[22px] text-ink" strokeWidth={1.5} aria-hidden />
                   <h3 className="font-serif text-lg font-semibold text-ink">{title}</h3>
                   <p className="text-sm leading-[1.7] text-muted">{body}</p>
@@ -169,9 +174,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 py-16 md:grid-cols-[auto_1fr] md:gap-16 md:py-[72px]">
+        <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 py-16 md:grid-cols-2 md:gap-10 md:py-[72px]">
           <PhoneShot src="/landing/family.jpg" alt="온기 앱 가족 탭 — 구성원과 초대 코드" size="md" />
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 md:max-w-md">
             <h2 className="font-serif text-2xl leading-snug font-semibold text-ink md:text-3xl md:leading-snug">
               할머니 할아버지도
               <br />
