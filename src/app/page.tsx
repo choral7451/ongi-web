@@ -233,9 +233,6 @@ export default function LandingPage() {
             <Link href="/legal/privacy" className="hover:underline">
               개인정보 처리방침
             </Link>
-            <a href="mailto:artinfokorea2022@gmail.com" className="hover:underline">
-              문의
-            </a>
           </p>
         </div>
       </footer>
