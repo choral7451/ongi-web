@@ -4,6 +4,8 @@
 @theme {
   --color-bg: #ffffff;
   --color-surface: #f1f2f4;
+  /* 랜딩 구역 구분용 따뜻한 회색 */
+  --color-warm: #f4f2ee;
   --color-ink: #101114;
   --color-muted: rgba(16, 17, 20, 0.55);
   --color-divider: rgba(16, 17, 20, 0.14);
