@@ -1,4 +1,4 @@
-import { CalendarDays, Check, FolderHeart, Images, Lock, MessageCircle } from 'lucide-react';
+import { Archive, CalendarDays, Check, FolderHeart, Images, KeyRound, Lock, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -14,11 +14,12 @@ export const metadata: Metadata = {
 };
 
 // 대상: 아기를 둔 엄마아빠가 조부모·친척에게 아기 사진을 나누는 것 (2026-10 재구성)
+// 히어로 핵심 네 가지 — 키워드만 남긴 알약 칩 (아래 '이런 적 있으시죠?' 의 불편에 대한 답)
 const HERO_POINTS = [
-  '백일·돌·여행, 앨범별로 정리할 수 있어요',
-  '시간이 지나도 사라지지 않아요',
-  '초대한 가족만 볼 수 있어요',
-  '할머니 할아버지는 초대 코드 하나로 들어와요',
+  { Icon: FolderHeart, label: '앨범별로 정리' },
+  { Icon: Archive, label: '사라지지 않아요' },
+  { Icon: Lock, label: '초대한 가족만' },
+  { Icon: KeyRound, label: '초대 코드 하나로' },
 ];
 
 const PAINS = [
@@ -107,12 +108,11 @@ export default function LandingPage() {
               가족에게만
             </h1>
             <div className="my-7 h-px w-14 bg-ink" />
-            {/* 핵심 네 줄 — 아래 '이런 적 있으시죠?' 의 불편에 대한 답을 첫 화면에서 먼저 */}
-            <ul className="flex flex-col gap-2.5 text-left">
-              {HERO_POINTS.map((point) => (
-                <li key={point} className="flex items-start gap-2.5 text-base leading-7 text-neutral-800 md:text-[17px]">
-                  <Check className="mt-[5px] h-[18px] w-[18px] shrink-0 text-ink" strokeWidth={2} aria-hidden />
-                  {point}
+            <ul className="flex max-w-md flex-wrap justify-center gap-2.5 md:justify-start">
+              {HERO_POINTS.map(({ Icon, label }) => (
+                <li key={label} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-400 px-4 py-2 text-[14.5px] text-ink">
+                  <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  {label}
                 </li>
               ))}
             </ul>
