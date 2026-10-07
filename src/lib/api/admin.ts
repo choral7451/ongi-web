@@ -31,6 +31,17 @@ export interface AdminStatsDaily {
   chatMessages: number;
 }
 
+export interface AdminShare {
+  cohort: number;
+  count: number;
+  rate: number;
+}
+
+export interface AdminMixShare {
+  count: number;
+  rate: number;
+}
+
 /** 지표 — 날짜는 한국 시간, 테스트 계정은 빠져 있다 */
 export interface AdminStats {
   today: string;
@@ -41,6 +52,14 @@ export interface AdminStats {
   engagement: { measuredUserDays: number; avgSecondsPerUser: number; avgSessionsPerUser: number; avgSecondsPerSession: number };
   /** rate 가 null 이면 아직 대상자가 없다 */
   retention: { days: number; cohort: number; retained: number; rate: number | null }[];
+  /** 재방문율을 역할로 나눠서 — admin(공간을 만든 사람) · member(초대받은 사람) · none(공간 없음). 구서버 응답에는 없다 */
+  retentionByRole?: { role: 'admin' | 'member' | 'none'; retention: AdminStats['retention'] }[];
+  /** 7일 안 활성화 — 만든 지 7일 지난 공간 중 두 번째 가족 합류, 가입 7일 지난 사용자 중 첫 사진 (최근 30일) */
+  activation?: { windowDays: number; secondMember: AdminShare; firstPhoto: AdminShare };
+  /** 최근 7일 접속자가 며칠 왔는지 — 1일부터 7일까지 */
+  visitDays?: { days: number; users: number }[];
+  /** 최근 7일 접속자 = 신규 + 기존 + 부활 */
+  activeMix?: { total: number; newUsers: AdminMixShare; existing: AdminMixShare; resurrected: AdminMixShare };
   spaces: { total: number; solo: number; soloRate: number; active7d: number; activeRate: number; avgMembers: number };
   funnel: { users: number } & Record<'withGroup' | 'withPhoto' | 'withChat' | 'withPush', { count: number; rate: number }>;
   platforms: { platform: string; users: number }[];

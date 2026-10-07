@@ -20,6 +20,16 @@ export function formatDuration(seconds: number): string {
 }
 
 const RETENTION_LABEL: Record<number, string> = { 1: '가입 다음 날', 7: '가입 7일 뒤', 30: '가입 30일 뒤' };
+const ROLE_LABEL: Record<string, { label: string; sub: string }> = {
+  admin: { label: '공간을 만든 사람', sub: '아기 부모' },
+  member: { label: '초대받은 사람', sub: '조부모 · 친척' },
+  none: { label: '공간이 없는 사람', sub: '가입만 함' },
+};
+const MIX_STEPS: { key: 'newUsers' | 'existing' | 'resurrected'; label: string }[] = [
+  { key: 'newUsers', label: '신규' },
+  { key: 'existing', label: '기존' },
+  { key: 'resurrected', label: '부활' },
+];
 const PLATFORM_LABEL: Record<string, string> = { ios: 'iPhone', android: 'Android', unknown: '알 수 없음' };
 const FUNNEL_STEPS: { key: 'withGroup' | 'withPhoto' | 'withChat' | 'withPush'; label: string }[] = [
   { key: 'withGroup', label: '공간에 참여' },
@@ -62,6 +72,14 @@ function ShareRow({ label, count, percent }: { label: string; count: number; per
 }
 
 const shareOf = (count: number, total: number) => (total > 0 ? Math.round((count / total) * 1000) / 10 : 0);
+const rateText = (rate: number | null) => (rate === null ? '—' : `${rate}%`);
+const cohortText = (share: { cohort: number; count: number }, what: string) =>
+  share.cohort === 0 ? '아직 대상이 없어요' : `${share.cohort.toLocaleString()}${what} 중 ${share.count.toLocaleString()}${what}`;
+
+/** 서버가 아직 안 보내는 항목 — 서버 배포 전 구응답 */
+function NotYet() {
+  return <p className="rounded-lg border border-divider px-4 py-5 text-[13px] leading-6 text-muted">서버를 업데이트하면 여기에 나타나요.</p>;
+}
 
 export function StatsTab() {
   const stats = useQuery({ queryKey: ['admin', 'stats'], queryFn: adminApi.getStats });
@@ -73,7 +91,9 @@ export function StatsTab() {
 }
 
 export function StatsView({ stats }: { stats: AdminStats }) {
-  const { today, trackingSince, active, daily, engagement, retention, spaces, funnel, platforms, versions } = stats;
+  const { today, trackingSince, active, daily, engagement, retention, retentionByRole, activation, visitDays, activeMix, spaces, funnel, platforms, versions } = stats;
+  const invitedD7 = retentionByRole?.find((r) => r.role === 'member')?.retention.find((r) => r.days === 7);
+  const visitTotal = visitDays?.reduce((sum, v) => sum + v.users, 0) ?? 0;
   const excluded = stats.excludedTestUsers ?? 0;
   const platformTotal = platforms.reduce((sum, p) => sum + p.users, 0);
   const versionTotal = versions.reduce((sum, v) => sum + v.users, 0);
@@ -86,6 +106,35 @@ export function StatsView({ stats }: { stats: AdminStats }) {
         {trackingSince ? ` 접속 기록은 ${dayLabel(trackingSince)}부터 쌓였어요.` : ' 접속 기록은 아직 없어요 — 서버 배포 뒤 첫 접속부터 쌓여요.'}
         {excluded > 0 ? ` 테스트 계정 ${excluded}개는 모든 수치에서 뺐어요.` : ' 테스트 계정은 사용자 탭에서 표시하면 수치에서 빠져요.'}
       </p>
+
+      <section>
+        <SectionHeader title="지금 올릴 지표" meta="0→1 단계 · 최근 30일 기준" />
+        {activation ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Tile
+              label={`${activation.windowDays}일 안에 두 번째 가족이 합류한 공간`}
+              value={`${activation.secondMember.rate}%`}
+              meter={activation.secondMember.rate}
+              sub={`만든 지 ${activation.windowDays}일 지난 ${cohortText(activation.secondMember, '곳')}`}
+            />
+            <Tile
+              label={`${activation.windowDays}일 안에 첫 사진을 올린 사람`}
+              value={`${activation.firstPhoto.rate}%`}
+              meter={activation.firstPhoto.rate}
+              sub={`가입 ${activation.windowDays}일 지난 ${cohortText(activation.firstPhoto, '명')}`}
+            />
+            <Tile
+              label="초대받은 사람의 가입 7일 뒤 재방문"
+              value={rateText(invitedD7?.rate ?? null)}
+              meter={invitedD7?.rate ?? null}
+              sub={invitedD7 && invitedD7.cohort > 0 ? `${invitedD7.cohort.toLocaleString()}명 중 ${invitedD7.retained.toLocaleString()}명이 다시 옴` : '아직 대상자가 없어요'}
+            />
+          </div>
+        ) : (
+          <NotYet />
+        )}
+        <p className="mt-2 text-[11px] text-muted">혼자인 공간은 가치가 없고, 사진이 있어야 가족이 올 이유가 생기고, 초대받은 가족이 남아야 부모도 남아요. 가입자 수보다 이 셋을 먼저 올려요.</p>
+      </section>
 
       <section>
         <SectionHeader title="접속자" />
@@ -141,6 +190,71 @@ export function StatsView({ stats }: { stats: AdminStats }) {
             />
           ))}
         </div>
+      </section>
+
+      <section>
+        <SectionHeader title="역할별 재방문율" meta="같은 기준을 역할로 나눠서" />
+        {retentionByRole ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] border-collapse text-[13px] tabular-nums">
+              <thead>
+                <tr className="border-y border-divider text-[11px] text-muted">
+                  <th className="py-2 text-left font-normal">역할</th>
+                  {retention.map((r) => (
+                    <th key={r.days} className="text-right font-normal">
+                      {RETENTION_LABEL[r.days] ?? `가입 ${r.days}일 뒤`}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {retentionByRole.map((row) => (
+                  <tr key={row.role} className="border-b border-divider text-ink">
+                    <td className="py-2 text-left">
+                      {ROLE_LABEL[row.role]?.label ?? row.role}
+                      <span className="text-muted"> · {ROLE_LABEL[row.role]?.sub}</span>
+                    </td>
+                    {row.retention.map((r) => (
+                      <td key={r.days} className="text-right">
+                        <span className="font-semibold">{rateText(r.rate)}</span>
+                        {r.cohort > 0 ? <span className="text-muted"> · {r.retained}/{r.cohort}</span> : null}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <NotYet />
+        )}
+      </section>
+
+      <section>
+        <SectionHeader title="접속 빈도" meta="최근 7일 접속자" />
+        {visitDays && activeMix ? (
+          <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+            <div>
+              <p className="mb-3 text-[12px] text-muted">7일 중 며칠 왔나 · {visitTotal.toLocaleString()}명</p>
+              <ul className="flex flex-col gap-3">
+                {visitDays.map((v) => (
+                  <ShareRow key={v.days} label={`${v.days}일`} count={v.users} percent={shareOf(v.users, visitTotal)} />
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="mb-3 text-[12px] text-muted">누가 왔나 · {activeMix.total.toLocaleString()}명</p>
+              <ul className="flex flex-col gap-3">
+                {MIX_STEPS.map((step) => (
+                  <ShareRow key={step.key} label={step.label} count={activeMix[step.key].count} percent={activeMix[step.key].rate} />
+                ))}
+              </ul>
+              <p className="mt-3 text-[11px] leading-5 text-muted">신규는 이번 7일에 가입한 사람, 기존은 지난 7일에도 온 사람, 부활은 그 전엔 왔다가 지난 7일엔 안 온 사람이에요.</p>
+            </div>
+          </div>
+        ) : (
+          <NotYet />
+        )}
       </section>
 
       <section>
