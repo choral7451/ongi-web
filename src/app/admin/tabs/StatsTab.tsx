@@ -7,6 +7,7 @@ import { adminApi } from '@/lib/api';
 import type { AdminStats } from '@/lib/api/admin';
 import { cn } from '@/lib/utils/cn';
 import { DailyChart } from './DailyChart';
+import { RetentionCurve, type RetentionSeries } from './RetentionCurve';
 
 const dayLabel = (day: string) => `${Number(day.slice(5, 7))}월 ${Number(day.slice(8, 10))}일`;
 
@@ -25,6 +26,8 @@ const ROLE_LABEL: Record<string, { label: string; sub: string }> = {
   member: { label: '초대받은 사람', sub: '조부모 · 친척' },
   none: { label: '공간이 없는 사람', sub: '가입만 함' },
 };
+/** 곡선 색 — 전체는 파랑, 공간을 만든 사람은 주황, 초대받은 사람은 청록 (색각 이상에서도 구분되는 조합으로 검증) */
+const CURVE_COLOR: Record<string, string> = { total: '#0164ff', admin: '#d9480f', member: '#0d9488' };
 const MIX_STEPS: { key: 'newUsers' | 'existing' | 'resurrected'; label: string }[] = [
   { key: 'newUsers', label: '신규' },
   { key: 'existing', label: '기존' },
@@ -91,7 +94,17 @@ export function StatsTab() {
 }
 
 export function StatsView({ stats }: { stats: AdminStats }) {
-  const { today, trackingSince, active, daily, engagement, retention, retentionByRole, activation, visitDays, activeMix, spaces, funnel, platforms, versions } = stats;
+  const { today, trackingSince, active, daily, engagement, retention, retentionByRole, retentionCurve, activation, visitDays, activeMix, spaces, funnel, platforms, versions } =
+    stats;
+  const curveSeries: RetentionSeries[] = retentionCurve
+    ? [
+        { key: 'total', label: '전체', color: CURVE_COLOR.total, points: retentionCurve.total },
+        ...retentionCurve.byRole
+          .filter((r) => r.role !== 'none')
+          .map((r) => ({ key: r.role, label: ROLE_LABEL[r.role]?.label ?? r.role, color: CURVE_COLOR[r.role], points: r.retention })),
+      ]
+    : [];
+  const curveDays = retentionCurve?.total.length ?? 30;
   const invitedD7 = retentionByRole?.find((r) => r.role === 'member')?.retention.find((r) => r.days === 7);
   const visitTotal = visitDays?.reduce((sum, v) => sum + v.users, 0) ?? 0;
   const excluded = stats.excludedTestUsers ?? 0;
@@ -190,6 +203,59 @@ export function StatsView({ stats }: { stats: AdminStats }) {
             />
           ))}
         </div>
+      </section>
+
+      <section>
+        <SectionHeader title="재방문 곡선" meta="최근 30일 가입자 · 가입 후 날짜별" />
+        {retentionCurve ? (
+          <>
+            <RetentionCurve title="가입 n일째에 다시 온 비율" series={curveSeries} count={curveDays} />
+            <p className="mt-3 text-[11px] leading-5 text-muted">
+              선이 내려가다 어딘가에서 평평해지면 그 높이가 온기의 체력이에요. 아직 그날을 맞지 않은 가입자는 그 점에서 빠지므로 오른쪽일수록 대상이 적어 흔들려요. 대상이 없는 날은 선이
+              끊겨요.
+            </p>
+            <details className="mt-3 text-[13px]">
+              <summary className="cursor-pointer font-serif font-semibold text-accent-700">표로 보기 — 재방문 곡선</summary>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[480px] border-collapse text-right tabular-nums">
+                  <thead>
+                    <tr className="border-y border-divider text-[11px] text-muted">
+                      <th className="py-2 text-left font-normal">가입 후</th>
+                      {curveSeries.map((s) => (
+                        <th key={s.key} className="font-normal">
+                          {s.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {retentionCurve.total.map((_, index) => (
+                      <tr key={index} className="border-b border-divider text-ink">
+                        <td className="py-1.5 text-left">{index + 1}일째</td>
+                        {curveSeries.map((s) => {
+                          const p = s.points[index];
+                          return (
+                            <td key={s.key}>
+                              {p?.rate === null || p === undefined ? <span className="text-muted">—</span> : `${p.rate}%`}
+                              {p && p.cohort > 0 ? (
+                                <span className="text-muted">
+                                  {' '}
+                                  · {p.retained}/{p.cohort}
+                                </span>
+                              ) : null}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </>
+        ) : (
+          <NotYet />
+        )}
       </section>
 
       <section>

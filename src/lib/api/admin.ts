@@ -54,6 +54,8 @@ export interface AdminStats {
   retention: { days: number; cohort: number; retained: number; rate: number | null }[];
   /** 재방문율을 역할로 나눠서 — admin(공간을 만든 사람) · member(초대받은 사람) · none(공간 없음). 구서버 응답에는 없다 */
   retentionByRole?: { role: 'admin' | 'member' | 'none'; retention: AdminStats['retention'] }[];
+  /** 재방문 곡선 — 최근 30일 가입자가 가입 1~30일째에 다시 온 비율, 전체와 역할별. 구서버 응답에는 없다 */
+  retentionCurve?: { total: AdminStats['retention']; byRole: { role: 'admin' | 'member' | 'none'; retention: AdminStats['retention'] }[] };
   /** 7일 안 활성화 — 만든 지 7일 지난 공간 중 두 번째 가족 합류, 가입 7일 지난 사용자 중 첫 사진 (최근 30일) */
   activation?: { windowDays: number; secondMember: AdminShare; firstPhoto: AdminShare };
   /** 최근 7일 접속자가 며칠 왔는지 — 1일부터 7일까지 */
