@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Fredoka, Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
+import { GoogleTag } from '@/components/analytics/GoogleTag';
 import { AppProviders } from '@/components/providers/AppProviders';
 import { SITE_DESCRIPTION, SITE_OPEN_GRAPH, SITE_TITLE, SITE_URL } from '@/lib/site';
 import './globals.css';
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko" className={`${notoSans.variable} ${notoSerif.variable} ${fredoka.variable} h-full`}>
       <body className="flex min-h-full flex-col">
+        <GoogleTag />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
